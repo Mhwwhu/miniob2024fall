@@ -3,6 +3,11 @@
 # readlink -f cannot work on mac
 TOPDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+GEN_PARSER_DIR="/home/haowen/miniob/src/observer/sql/parser/"
+
+flex --outfile ${GEN_PARSER_DIR}lex_sql.cpp --header-file=${GEN_PARSER_DIR}lex_sql.h ${GEN_PARSER_DIR}lex_sql.l
+`which bison` -d --output ${GEN_PARSER_DIR}yacc_sql.cpp ${GEN_PARSER_DIR}yacc_sql.y
+
 BUILD_SH=$TOPDIR/build.sh
 
 CMAKE_COMMAND="cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 --log-level=STATUS"

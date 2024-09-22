@@ -89,6 +89,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         INT_T
         STRING_T
         FLOAT_T
+				DATE_T
         HELP
         EXIT
         DOT //QUOTE
@@ -136,6 +137,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %token <floats> FLOAT
 %token <string> ID
 %token <string> SSS
+%token <string> DATE
 //非终结符
 
 /** type 定义了各种解析后的结果输出的是什么类型。类型对应了 union 中的定义的成员变量名称 **/
@@ -360,6 +362,7 @@ type:
     INT_T      { $$ = static_cast<int>(AttrType::INTS); }
     | STRING_T { $$ = static_cast<int>(AttrType::CHARS); }
     | FLOAT_T  { $$ = static_cast<int>(AttrType::FLOATS); }
+		| DATE_T   { $$ = static_cast<int>(AttrType::DATES); }
     ;
 insert_stmt:        /*insert   语句的语法解析树*/
     INSERT INTO ID VALUES LBRACE value value_list RBRACE 
@@ -407,6 +410,19 @@ value:
       free(tmp);
       free($1);
     }
+		|DATE {
+			char* tmp = $1;
+			$$ = new Value();
+			if(OB_FAIL(DataType::type_instance(AttrType::DATES)->set_value_from_str(*$$, string(tmp)))) {
+				// yyerror("Invalid date format");
+				// free(tmp);
+				// free($1);
+				YYERROR;
+			}
+			printf("#1\n");
+			free(tmp);
+			printf("#2\n");
+		}
     ;
 storage_format:
     /* empty */
