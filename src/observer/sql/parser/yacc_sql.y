@@ -411,16 +411,18 @@ value:
       free($1);
     }
 		|DATE {
-			char* tmp = $1;
+			char* tmp = common::substr($1, 1, strlen($1) - 2);
 			$$ = new Value();
+			printf("#0\n");
 			if(OB_FAIL(DataType::type_instance(AttrType::DATES)->set_value_from_str(*$$, string(tmp)))) {
 				// yyerror("Invalid date format");
-				// free(tmp);
-				// free($1);
+				free(tmp);
+				free($1);
 				YYERROR;
 			}
 			printf("#1\n");
 			free(tmp);
+			free($1);
 			printf("#2\n");
 		}
     ;
