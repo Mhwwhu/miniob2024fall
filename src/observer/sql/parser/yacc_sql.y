@@ -12,6 +12,7 @@
 #include "sql/parser/yacc_sql.hpp"
 #include "sql/parser/lex_sql.h"
 #include "sql/expr/expression.h"
+#include "common/type/date_type.h"
 
 using namespace std;
 
@@ -362,7 +363,7 @@ type:
     INT_T      { $$ = static_cast<int>(AttrType::INTS); }
     | STRING_T { $$ = static_cast<int>(AttrType::CHARS); }
     | FLOAT_T  { $$ = static_cast<int>(AttrType::FLOATS); }
-		| DATE_T   { $$ = static_cast<int>(AttrType::DATES); }
+	| DATE_T   { $$ = static_cast<int>(AttrType::DATES); }
     ;
 insert_stmt:        /*insert   语句的语法解析树*/
     INSERT INTO ID VALUES LBRACE value value_list RBRACE 
@@ -410,21 +411,18 @@ value:
       free(tmp);
       free($1);
     }
-		|DATE {
-			char* tmp = common::substr($1, 1, strlen($1) - 2);
-			$$ = new Value();
-			printf("#0\n");
-			if(OB_FAIL(DataType::type_instance(AttrType::DATES)->set_value_from_str(*$$, string(tmp)))) {
-				// yyerror("Invalid date format");
-				free(tmp);
-				free($1);
-				YYERROR;
-			}
-			printf("#1\n");
-			free(tmp);
-			free($1);
-			printf("#2\n");
+	|DATE {
+		char* tmp = common::substr($1, 1, strlen($1) - 2);
+		int date_i;
+		if(DateType::str_to_date(tmp, date_i)) {
+			$$ = new Value(AttrType::DATES, (char*)&date_i, 4);
 		}
+		else {
+			$$ = new Value(tmp);
+		}
+		free(tmp);
+		free($1);
+	}
     ;
 storage_format:
     /* empty */

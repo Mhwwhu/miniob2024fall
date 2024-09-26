@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.5.1.  */
+/* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -31,11 +31,12 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* Undocumented macros, especially those whose name start with YY_,
-   are private implementation details.  Do not rely on them.  */
+/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
+   especially those whose name start with YY_ or yy_.  They are
+   private implementation details that can be changed or removed.  */
 
-#ifndef YY_YY_HOME_HAOWEN_MINIOB_SRC_OBSERVER_SQL_PARSER_YACC_SQL_HPP_INCLUDED
-# define YY_YY_HOME_HAOWEN_MINIOB_SRC_OBSERVER_SQL_PARSER_YACC_SQL_HPP_INCLUDED
+#ifndef YY_YY_HOME_HAOWEN_MINIOB2023_MINIOB2023FALL_SRC_OBSERVER_SQL_PARSER_YACC_SQL_HPP_INCLUDED
+# define YY_YY_HOME_HAOWEN_MINIOB2023_MINIOB2023FALL_SRC_OBSERVER_SQL_PARSER_YACC_SQL_HPP_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -44,73 +45,78 @@
 extern int yydebug;
 #endif
 
-/* Token type.  */
+/* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    SEMICOLON = 258,
-    BY = 259,
-    CREATE = 260,
-    DROP = 261,
-    GROUP = 262,
-    TABLE = 263,
-    TABLES = 264,
-    INDEX = 265,
-    CALC = 266,
-    SELECT = 267,
-    DESC = 268,
-    SHOW = 269,
-    SYNC = 270,
-    INSERT = 271,
-    DELETE = 272,
-    UPDATE = 273,
-    LBRACE = 274,
-    RBRACE = 275,
-    COMMA = 276,
-    TRX_BEGIN = 277,
-    TRX_COMMIT = 278,
-    TRX_ROLLBACK = 279,
-    INT_T = 280,
-    STRING_T = 281,
-    FLOAT_T = 282,
-    DATE_T = 283,
-    HELP = 284,
-    EXIT = 285,
-    DOT = 286,
-    INTO = 287,
-    VALUES = 288,
-    FROM = 289,
-    WHERE = 290,
-    AND = 291,
-    SET = 292,
-    ON = 293,
-    LOAD = 294,
-    DATA = 295,
-    INFILE = 296,
-    EXPLAIN = 297,
-    STORAGE = 298,
-    FORMAT = 299,
-    EQ = 300,
-    LT = 301,
-    GT = 302,
-    LE = 303,
-    GE = 304,
-    NE = 305,
-    NUMBER = 306,
-    FLOAT = 307,
-    ID = 308,
-    SSS = 309,
-    DATE = 310,
-    UMINUS = 311
+    YYEMPTY = -2,
+    YYEOF = 0,                     /* "end of file"  */
+    YYerror = 256,                 /* error  */
+    YYUNDEF = 257,                 /* "invalid token"  */
+    SEMICOLON = 258,               /* SEMICOLON  */
+    BY = 259,                      /* BY  */
+    CREATE = 260,                  /* CREATE  */
+    DROP = 261,                    /* DROP  */
+    GROUP = 262,                   /* GROUP  */
+    TABLE = 263,                   /* TABLE  */
+    TABLES = 264,                  /* TABLES  */
+    INDEX = 265,                   /* INDEX  */
+    CALC = 266,                    /* CALC  */
+    SELECT = 267,                  /* SELECT  */
+    DESC = 268,                    /* DESC  */
+    SHOW = 269,                    /* SHOW  */
+    SYNC = 270,                    /* SYNC  */
+    INSERT = 271,                  /* INSERT  */
+    DELETE = 272,                  /* DELETE  */
+    UPDATE = 273,                  /* UPDATE  */
+    LBRACE = 274,                  /* LBRACE  */
+    RBRACE = 275,                  /* RBRACE  */
+    COMMA = 276,                   /* COMMA  */
+    TRX_BEGIN = 277,               /* TRX_BEGIN  */
+    TRX_COMMIT = 278,              /* TRX_COMMIT  */
+    TRX_ROLLBACK = 279,            /* TRX_ROLLBACK  */
+    INT_T = 280,                   /* INT_T  */
+    STRING_T = 281,                /* STRING_T  */
+    FLOAT_T = 282,                 /* FLOAT_T  */
+    DATE_T = 283,                  /* DATE_T  */
+    HELP = 284,                    /* HELP  */
+    EXIT = 285,                    /* EXIT  */
+    DOT = 286,                     /* DOT  */
+    INTO = 287,                    /* INTO  */
+    VALUES = 288,                  /* VALUES  */
+    FROM = 289,                    /* FROM  */
+    WHERE = 290,                   /* WHERE  */
+    AND = 291,                     /* AND  */
+    SET = 292,                     /* SET  */
+    ON = 293,                      /* ON  */
+    LOAD = 294,                    /* LOAD  */
+    DATA = 295,                    /* DATA  */
+    INFILE = 296,                  /* INFILE  */
+    EXPLAIN = 297,                 /* EXPLAIN  */
+    STORAGE = 298,                 /* STORAGE  */
+    FORMAT = 299,                  /* FORMAT  */
+    EQ = 300,                      /* EQ  */
+    LT = 301,                      /* LT  */
+    GT = 302,                      /* GT  */
+    LE = 303,                      /* LE  */
+    GE = 304,                      /* GE  */
+    NE = 305,                      /* NE  */
+    NUMBER = 306,                  /* NUMBER  */
+    FLOAT = 307,                   /* FLOAT  */
+    ID = 308,                      /* ID  */
+    SSS = 309,                     /* SSS  */
+    DATE = 310,                    /* DATE  */
+    UMINUS = 311                   /* UMINUS  */
   };
+  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 117 "/home/haowen/miniob/src/observer/sql/parser/yacc_sql.y"
+#line 118 "/home/haowen/miniob2023/miniob2023fall/src/observer/sql/parser/yacc_sql.y"
 
   ParsedSqlNode *                            sql_node;
   ConditionSqlNode *                         condition;
@@ -129,7 +135,7 @@ union YYSTYPE
   int                                        number;
   float                                      floats;
 
-#line 133 "/home/haowen/miniob/src/observer/sql/parser/yacc_sql.hpp"
+#line 139 "/home/haowen/miniob2023/miniob2023fall/src/observer/sql/parser/yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -153,6 +159,8 @@ struct YYLTYPE
 
 
 
+
 int yyparse (const char * sql_string, ParsedSqlResult * sql_result, void * scanner);
 
-#endif /* !YY_YY_HOME_HAOWEN_MINIOB_SRC_OBSERVER_SQL_PARSER_YACC_SQL_HPP_INCLUDED  */
+
+#endif /* !YY_YY_HOME_HAOWEN_MINIOB2023_MINIOB2023FALL_SRC_OBSERVER_SQL_PARSER_YACC_SQL_HPP_INCLUDED  */

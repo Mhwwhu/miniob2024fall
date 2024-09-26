@@ -21,10 +21,12 @@ public:
 	RC set_value_from_str(Value& val, const string& data) const override;
 
 	RC to_string(const Value& val, string& result) const override;
+
+	static bool str_to_date(const char* str, int& date_i);
 private:
-	const int startYear = 1000;
-	bool checkDateValid(int year, int month, int day) const;
-	int countLeapYears(int start, int end) const;
-	int countDaysOffset(bool isLeap, int month, int day) const;
-	bool isLeap(int year) const;
+	static const int startYear = 1000;
+	static bool checkDateValid(int year, int month, int day);
+	static int countLeapYears(int start, int end);
+	static int countDaysOffset(bool isLeap, int month, int day);
+	static bool isLeap(int year);
 };

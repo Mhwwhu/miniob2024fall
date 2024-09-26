@@ -65,7 +65,6 @@ DIGIT            [0-9]+
 ID               [A-Za-z_]+[A-Za-z0-9_]*
 DOT              \.
 QUOTE            [\'\"]
-DATE             ([\"\'])[0-9]{1,4}-[0-9]{1,2}-[0-9]{1,2}\1
 %x STR
 
 /* 规则匹配的优先级：*/
@@ -137,7 +136,8 @@ FORMAT                                  RETURN_TOKEN(FORMAT);
 "-" |
 "*" |
 "/"                                     { return yytext[0]; }
-{DATE}                                  yylval->string = strdup(yytext); RETURN_TOKEN(DATE);
+\'[0-9]{1,4}-[0-9]{1,2}-[0-9]{1,2}\'    yylval->string = strdup(yytext); RETURN_TOKEN(DATE);
+\"[0-9]{1,4}-[0-9]{1,2}-[0-9]{1,2}\"    yylval->string = strdup(yytext); RETURN_TOKEN(DATE);
 \"[^"]*\"                               yylval->string = strdup(yytext); RETURN_TOKEN(SSS);
 '[^']*\'                                yylval->string = strdup(yytext); RETURN_TOKEN(SSS);
 

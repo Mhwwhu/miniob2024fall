@@ -321,7 +321,7 @@ int Value::get_date() const
 		Value val;
 		if (OB_SUCC(DataType::type_instance(AttrType::DATES)->set_value_from_str(val, value_.pointer_value_)))
 		{
-			return val.value_.int_value_;
+			return val.value_.date_value_;
 		}
 		LOG_WARN("Only string with specific format can be converted to date");
 	} break;

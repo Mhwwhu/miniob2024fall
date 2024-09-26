@@ -31,7 +31,6 @@ RC DateType::set_value_from_str(Value& val, const string& data) const
 	if (!checkDateValid(year, month, day)) {
 		val.set_date(0);
 		LOG_WARN("Failed to convert string to date");
-		printf("#\n");
 		return RC::SCHEMA_FIELD_TYPE_MISMATCH;
 	}
 	val.set_date(year << 9 | month << 5 | day);
@@ -51,7 +50,7 @@ RC DateType::to_string(const Value& val, string& result) const
 	return RC::SUCCESS;
 }
 
-bool DateType::checkDateValid(int year, int month, int day) const
+bool DateType::checkDateValid(int year, int month, int day)
 {
 	if (year < startYear) return false;
 	if (month <= 0 || month > 12) return false;
@@ -60,14 +59,14 @@ bool DateType::checkDateValid(int year, int month, int day) const
 	return true;
 }
 
-int DateType::countLeapYears(int start, int end) const
+int DateType::countLeapYears(int start, int end)
 {
 	return ((end - 1) / 4 - (start - 1) / 4)
 		- ((end - 1) / 100 - (start - 1) / 100)
 		+ ((end - 1) / 400 - (start - 1) / 400);
 }
 
-int DateType::countDaysOffset(bool isLeap, int month, int day) const
+int DateType::countDaysOffset(bool isLeap, int month, int day)
 {
 	int monthDay[13] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 	int count = -1;
@@ -79,7 +78,18 @@ int DateType::countDaysOffset(bool isLeap, int month, int day) const
 	return count;
 }
 
-bool DateType::isLeap(int year) const
+bool DateType::isLeap(int year)
 {
 	return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+}
+
+bool DateType::str_to_date(const char* str, int& date_i)
+{
+	int year, month, day;
+	sscanf(str, "%d-%d-%d", &year, &month, &day);
+	if (!checkDateValid(year, month, day)) {
+		return false;
+	}
+	date_i = year << 9 | month << 5 | day;
+	return true;
 }
