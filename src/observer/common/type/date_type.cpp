@@ -41,11 +41,11 @@ RC DateType::to_string(const Value& val, string& result) const
 {
 	stringstream ss;
 	int date = val.get_date();
-	ss << ((date >> 9) & 0x3fff)
-		<< '-'
-		<< ((date >> 5) & 0xf)
-		<< '-'
-		<< (date & 0x1f);
+	ss << std::setw(4) << std::setfill('0') << ((date >> 9) & 0x3fff);
+	ss << '-';
+	ss << std::setw(2) << std::setfill('0') << ((date >> 5) & 0xf);
+	ss << '-';
+	ss << std::setw(2) << std::setfill('0') << (date & 0x1f);
 	result = ss.str();
 	return RC::SUCCESS;
 }
