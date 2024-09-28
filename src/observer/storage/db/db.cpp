@@ -175,6 +175,7 @@ RC Db::drop_table(Table* table)
 		return rc;
 	}
 	opened_tables_.erase(table->name());
+	delete table;
 	return rc;
 }
 
