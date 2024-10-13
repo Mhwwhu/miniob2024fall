@@ -134,6 +134,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   float                                      floats;
 }
 
+
+
 %token <number> NUMBER
 %token <floats> FLOAT
 %token <string> ID
@@ -182,6 +184,13 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            command_wrapper
 // commands should be a list but I use a single command instead
 %type <sql_node>            commands
+
+%destructor {
+	free($$);
+} <value>
+%destructor {
+	free($$);
+} <string>
 
 %left '+' '-'
 %left '*' '/'
@@ -460,6 +469,7 @@ update_stmt:      /*  update 语句的语法解析树*/
       }
       free($2);
       free($4);
+	  delete $6;
     }
     ;
 select_stmt:        /*  select 语句的语法解析树*/

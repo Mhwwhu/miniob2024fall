@@ -2,7 +2,7 @@
 miniob is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
+		 http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
@@ -44,51 +44,51 @@ class LogReplayer;
 class Operation
 {
 public:
-  /**
-   * @brief 操作的类型
-   * @ingroup Transaction
-   */
-  enum class Type : int
-  {
-    INSERT,
-    UPDATE,
-    DELETE,
-    UNDEFINED,
-  };
+	/**
+	 * @brief 操作的类型
+	 * @ingroup Transaction
+	 */
+	enum class Type : int
+	{
+		INSERT,
+		UPDATE,
+		DELETE,
+		UNDEFINED,
+	};
 
 public:
-  Operation(Type type, Table *table, const RID &rid)
-      : type_(type), table_(table), page_num_(rid.page_num), slot_num_(rid.slot_num)
-  {}
+	Operation(Type type, Table* table, const RID& rid)
+		: type_(type), table_(table), page_num_(rid.page_num), slot_num_(rid.slot_num)
+	{}
 
-  Type    type() const { return type_; }
-  int32_t table_id() const { return table_->table_id(); }
-  Table  *table() const { return table_; }
-  PageNum page_num() const { return page_num_; }
-  SlotNum slot_num() const { return slot_num_; }
+	Type    type() const { return type_; }
+	int32_t table_id() const { return table_->table_id(); }
+	Table* table() const { return table_; }
+	PageNum page_num() const { return page_num_; }
+	SlotNum slot_num() const { return slot_num_; }
 
 private:
-  ///< 操作的哪张表。这里直接使用表其实并不准确，因为表中的索引也可能有日志
-  Type type_;
+	///< 操作的哪张表。这里直接使用表其实并不准确，因为表中的索引也可能有日志
+	Type type_;
 
-  Table  *table_ = nullptr;
-  PageNum page_num_;  // TODO use RID instead of page num and slot num
-  SlotNum slot_num_;
+	Table* table_ = nullptr;
+	PageNum page_num_;  // TODO use RID instead of page num and slot num
+	SlotNum slot_num_;
 };
 
 class OperationHasher
 {
 public:
-  size_t operator()(const Operation &op) const { return (((size_t)op.page_num()) << 32) | (op.slot_num()); }
+	size_t operator()(const Operation& op) const { return (((size_t)op.page_num()) << 32) | (op.slot_num()); }
 };
 
 class OperationEqualer
 {
 public:
-  bool operator()(const Operation &op1, const Operation &op2) const
-  {
-    return op1.table_id() == op2.table_id() && op1.page_num() == op2.page_num() && op1.slot_num() == op2.slot_num();
-  }
+	bool operator()(const Operation& op1, const Operation& op2) const
+	{
+		return op1.table_id() == op2.table_id() && op1.page_num() == op2.page_num() && op1.slot_num() == op2.slot_num();
+	}
 };
 
 /**
@@ -98,39 +98,39 @@ public:
 class TrxKit
 {
 public:
-  /**
-   * @brief 事务管理器的类型
-   * @ingroup Transaction
-   * @details 进程启动时根据事务管理器的类型来创建具体的对象
-   */
-  enum Type
-  {
-    VACUOUS,  ///< 空的事务管理器，不做任何事情
-    MVCC,     ///< 支持MVCC的事务管理器
-  };
+	/**
+	 * @brief 事务管理器的类型
+	 * @ingroup Transaction
+	 * @details 进程启动时根据事务管理器的类型来创建具体的对象
+	 */
+	enum Type
+	{
+		VACUOUS,  ///< 空的事务管理器，不做任何事情
+		MVCC,     ///< 支持MVCC的事务管理器
+	};
 
 public:
-  TrxKit()          = default;
-  virtual ~TrxKit() = default;
+	TrxKit() = default;
+	virtual ~TrxKit() = default;
 
-  virtual RC                       init()             = 0;
-  virtual const vector<FieldMeta> *trx_fields() const = 0;
+	virtual RC                       init() = 0;
+	virtual const vector<FieldMeta>* trx_fields() const = 0;
 
-  virtual Trx *create_trx(LogHandler &log_handler) = 0;
+	virtual Trx* create_trx(LogHandler& log_handler) = 0;
 
-  /**
-   * @brief 创建一个事务，日志回放时使用
-   */
-  virtual Trx *create_trx(LogHandler &log_handler, int32_t trx_id) = 0;
-  virtual Trx *find_trx(int32_t trx_id)                            = 0;
-  virtual void all_trxes(vector<Trx *> &trxes)                     = 0;
+	/**
+	 * @brief 创建一个事务，日志回放时使用
+	 */
+	virtual Trx* create_trx(LogHandler& log_handler, int32_t trx_id) = 0;
+	virtual Trx* find_trx(int32_t trx_id) = 0;
+	virtual void all_trxes(vector<Trx*>& trxes) = 0;
 
-  virtual void destroy_trx(Trx *trx) = 0;
+	virtual void destroy_trx(Trx* trx) = 0;
 
-  virtual LogReplayer *create_log_replayer(Db &db, LogHandler &log_handler) = 0;
+	virtual LogReplayer* create_log_replayer(Db& db, LogHandler& log_handler) = 0;
 
 public:
-  static TrxKit *create(const char *name);
+	static TrxKit* create(const char* name);
 };
 
 /**
@@ -140,18 +140,19 @@ public:
 class Trx
 {
 public:
-  Trx()          = default;
-  virtual ~Trx() = default;
+	Trx() = default;
+	virtual ~Trx() = default;
 
-  virtual RC insert_record(Table *table, Record &record)                    = 0;
-  virtual RC delete_record(Table *table, Record &record)                    = 0;
-  virtual RC visit_record(Table *table, Record &record, ReadWriteMode mode) = 0;
+	virtual RC insert_record(Table* table, Record& record) = 0;
+	virtual RC delete_record(Table* table, Record& record) = 0;
+	virtual RC update_record(Table* table, Record& oldRecord, Record& newRecord) = 0;
+	virtual RC visit_record(Table* table, Record& record, ReadWriteMode mode) = 0;
 
-  virtual RC start_if_need() = 0;
-  virtual RC commit()        = 0;
-  virtual RC rollback()      = 0;
+	virtual RC start_if_need() = 0;
+	virtual RC commit() = 0;
+	virtual RC rollback() = 0;
 
-  virtual RC redo(Db *db, const LogEntry &log_entry) = 0;
+	virtual RC redo(Db* db, const LogEntry& log_entry) = 0;
 
-  virtual int32_t id() const = 0;
+	virtual int32_t id() const = 0;
 };

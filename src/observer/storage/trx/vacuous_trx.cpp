@@ -2,7 +2,7 @@
 miniob is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
+		 http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
@@ -16,27 +16,29 @@ See the Mulan PSL v2 for more details. */
 
 RC VacuousTrxKit::init() { return RC::SUCCESS; }
 
-const vector<FieldMeta> *VacuousTrxKit::trx_fields() const { return nullptr; }
+const vector<FieldMeta>* VacuousTrxKit::trx_fields() const { return nullptr; }
 
-Trx *VacuousTrxKit::create_trx(LogHandler &) { return new VacuousTrx; }
+Trx* VacuousTrxKit::create_trx(LogHandler&) { return new VacuousTrx; }
 
-Trx *VacuousTrxKit::create_trx(LogHandler &, int32_t /*trx_id*/) { return nullptr; }
+Trx* VacuousTrxKit::create_trx(LogHandler&, int32_t /*trx_id*/) { return nullptr; }
 
-void VacuousTrxKit::destroy_trx(Trx *trx) { delete trx; }
+void VacuousTrxKit::destroy_trx(Trx* trx) { delete trx; }
 
-Trx *VacuousTrxKit::find_trx(int32_t /* trx_id */) { return nullptr; }
+Trx* VacuousTrxKit::find_trx(int32_t /* trx_id */) { return nullptr; }
 
-void VacuousTrxKit::all_trxes(vector<Trx *> &trxes) { return; }
+void VacuousTrxKit::all_trxes(vector<Trx*>& trxes) { return; }
 
-LogReplayer *VacuousTrxKit::create_log_replayer(Db &, LogHandler &) { return new VacuousTrxLogReplayer; }
+LogReplayer* VacuousTrxKit::create_log_replayer(Db&, LogHandler&) { return new VacuousTrxLogReplayer; }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-RC VacuousTrx::insert_record(Table *table, Record &record) { return table->insert_record(record); }
+RC VacuousTrx::insert_record(Table* table, Record& record) { return table->insert_record(record); }
 
-RC VacuousTrx::delete_record(Table *table, Record &record) { return table->delete_record(record); }
+RC VacuousTrx::delete_record(Table* table, Record& record) { return table->delete_record(record); }
 
-RC VacuousTrx::visit_record(Table *table, Record &record, ReadWriteMode) { return RC::SUCCESS; }
+RC VacuousTrx::update_record(Table* table, Record& oldRecord, Record& newRecord) { return table->update_record(oldRecord, newRecord); }
+
+RC VacuousTrx::visit_record(Table* table, Record& record, ReadWriteMode) { return RC::SUCCESS; }
 
 RC VacuousTrx::start_if_need() { return RC::SUCCESS; }
 
@@ -44,4 +46,4 @@ RC VacuousTrx::commit() { return RC::SUCCESS; }
 
 RC VacuousTrx::rollback() { return RC::SUCCESS; }
 
-RC VacuousTrx::redo(Db *, const LogEntry &) { return RC::SUCCESS; }
+RC VacuousTrx::redo(Db*, const LogEntry&) { return RC::SUCCESS; }

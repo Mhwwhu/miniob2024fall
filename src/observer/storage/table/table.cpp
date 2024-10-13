@@ -528,6 +528,23 @@ RC Table::delete_record(const Record& record)
 	return rc;
 }
 
+RC Table::update_record(const Record& oldRecord, const Record& newRecord)
+{
+	RC rc = RC::SUCCESS;
+	for (Index* index : indexes_) {
+		rc = index->delete_entry(oldRecord.data(), &oldRecord.rid());
+		ASSERT(RC::SUCCESS == rc,
+			"failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
+			name(), index->index_meta().name(), oldRecord.rid().to_string().c_str(), strrc(rc));
+		rc = index->insert_entry(newRecord.data(), &newRecord.rid());
+		ASSERT(RC::SUCCESS == rc,
+			"failed to insert entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
+			name(), index->index_meta().name(), newRecord.rid().to_string().c_str(), strrc(rc));
+	}
+	rc = record_handler_->update_record(newRecord.data(), newRecord.len(), &newRecord.rid());
+	return rc;
+}
+
 RC Table::insert_entry_of_indexes(const char* record, const RID& rid)
 {
 	RC rc = RC::SUCCESS;
