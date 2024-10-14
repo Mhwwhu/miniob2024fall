@@ -36,7 +36,6 @@ See the Mulan PSL v2 for more details. */
 #include "sql/stmt/select_stmt.h"
 #include "sql/stmt/update_stmt.h"
 #include "sql/stmt/stmt.h"
-#include "sql/stmt/join_stmt.h"
 
 #include "sql/expr/expression_iterator.h"
 

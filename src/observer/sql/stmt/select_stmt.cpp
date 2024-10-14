@@ -13,7 +13,6 @@ See the Mulan PSL v2 for more details. */
 //
 
 #include "sql/stmt/select_stmt.h"
-#include "sql/stmt/join_stmt.h"
 #include "common/lang/string.h"
 #include "common/log/log.h"
 #include "sql/stmt/filter_stmt.h"
@@ -30,10 +29,6 @@ SelectStmt::~SelectStmt()
 		delete filter_stmt_;
 		filter_stmt_ = nullptr;
 	}
-	if (join_stmt_ != nullptr) {
-		delete join_stmt_;
-		join_stmt_ = nullptr;
-	}
 }
 
 RC SelectStmt::create(Db* db, SelectSqlNode& select_sql, Stmt*& stmt)
@@ -48,15 +43,8 @@ RC SelectStmt::create(Db* db, SelectSqlNode& select_sql, Stmt*& stmt)
 	// collect tables in `from` statement
 	vector<Table*>                tables;
 	unordered_map<string, Table*> table_map;
-	std::vector<string> relations;
-	JoinSqlNode* joinSqlNode = select_sql.joinedRelations.get();
-	Stmt* join_stmt = nullptr;
-	RC rc = JoinStmt::create(db, nullptr, *select_sql.joinedRelations, join_stmt);
+	std::vector<string> relations = select_sql.joinedRelations->tableNames;
 
-	while (joinSqlNode != nullptr) {
-		relations.push_back(joinSqlNode->leftTableName);
-		joinSqlNode = joinSqlNode->rightTable.get();
-	}
 	for (size_t i = 0; i < relations.size(); i++) {
 		const char* table_name = relations[i].c_str();
 		if (nullptr == table_name) {
@@ -103,11 +91,17 @@ RC SelectStmt::create(Db* db, SelectSqlNode& select_sql, Stmt*& stmt)
 
 	// create filter statement in `where` statement
 	FilterStmt* filter_stmt = nullptr;
-	rc = FilterStmt::create(db,
+	std::vector<ConditionSqlNode> allConditions;
+	auto joinConditions = select_sql.joinedRelations->conditions;
+	allConditions.reserve(select_sql.conditions.size() + joinConditions.size());
+	std::move(select_sql.conditions.begin(), select_sql.conditions.end(), std::back_inserter(allConditions));
+	std::move(joinConditions.begin(), joinConditions.end(), std::back_inserter(allConditions));
+
+	RC rc = FilterStmt::create(db,
 		default_table,
 		&table_map,
-		select_sql.conditions.data(),
-		static_cast<int>(select_sql.conditions.size()),
+		allConditions.data(),
+		static_cast<int>(allConditions.size()),
 		filter_stmt);
 	if (rc != RC::SUCCESS) {
 		LOG_WARN("cannot construct filter stmt");
@@ -121,7 +115,6 @@ RC SelectStmt::create(Db* db, SelectSqlNode& select_sql, Stmt*& stmt)
 	select_stmt->query_expressions_.swap(bound_expressions);
 	select_stmt->filter_stmt_ = filter_stmt;
 	select_stmt->group_by_.swap(group_by_expressions);
-	select_stmt->join_stmt_ = static_cast<JoinStmt*>(join_stmt);
 	stmt = select_stmt;
 	return RC::SUCCESS;
 }

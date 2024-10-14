@@ -23,7 +23,6 @@ See the Mulan PSL v2 for more details. */
 
 class FieldMeta;
 class FilterStmt;
-class JoinStmt;
 class Db;
 class Table;
 
@@ -45,7 +44,6 @@ public:
 public:
 	const std::vector<Table*>& tables() const { return tables_; }
 	FilterStmt* filter_stmt() const { return filter_stmt_; }
-	JoinStmt* join_stmt() const { return join_stmt_; }
 
 	std::vector<std::unique_ptr<Expression>>& query_expressions() { return query_expressions_; }
 	std::vector<std::unique_ptr<Expression>>& group_by() { return group_by_; }
@@ -53,7 +51,6 @@ public:
 private:
 	std::vector<std::unique_ptr<Expression>> query_expressions_;
 	std::vector<Table*>                     tables_;
-	JoinStmt* join_stmt_ = nullptr;
 	FilterStmt* filter_stmt_ = nullptr;
 	std::vector<std::unique_ptr<Expression>> group_by_;
 };

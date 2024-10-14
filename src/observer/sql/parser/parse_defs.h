@@ -81,8 +81,7 @@ struct ConditionSqlNode
  */
 struct JoinSqlNode
 {
-	std::string leftTableName;
-	std::unique_ptr<JoinSqlNode> rightTable;
+	std::vector<string> tableNames;
 	std::vector<ConditionSqlNode> conditions;
 };
 
@@ -100,7 +99,7 @@ struct JoinSqlNode
 struct SelectSqlNode
 {
 	std::vector<std::unique_ptr<Expression>> expressions;  ///< 查询的表达式
-	unique_ptr<JoinSqlNode>       joinedRelations;    ///< 查询的表
+	unique_ptr<JoinSqlNode>                  joinedRelations;    ///< 查询的表
 	std::vector<ConditionSqlNode>            conditions;   ///< 查询条件，使用AND串联起来多个条件
 	std::vector<std::unique_ptr<Expression>> group_by;     ///< group by clause
 };

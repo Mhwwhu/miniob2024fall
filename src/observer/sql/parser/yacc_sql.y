@@ -507,44 +507,46 @@ select_stmt:        /*  select 语句的语法解析树*/
 join:
 	ID
 	{
-		$$ = new JoinSqlNode();
-		$$->leftTableName = $1;
-		$$->rightTable = nullptr;
+		$$ = new JoinSqlNode;
+		$$->tableNames.push_back($1);
 		free($1);
 	}
 	| ID INNER JOIN ID ON condition_list
 	{
-		// $$ = new JoinSqlNode();
-		// $$->leftTableName = $1;
-		// $$->rightTable = std::make_unique<JoinSqlNode>();
-		// $$->rightTable->leftTableName = $4;
-		// if($6 != nullptr) {
-		// 	$$->conditions.swap(*$6);
-		// 	delete $6;
-		// }
-		// free($1);
-		// free($4);
+		$$ = new JoinSqlNode;
+		$$->tableNames.push_back($1);
+		$$->tableNames.push_back($4);
+		free($1);
+		free($4);
+		$$->conditions.swap(*$6);
+		delete $6;
 	}
 	| join INNER JOIN ID ON condition_list
 	{
-		// $$ = $1;
-		// auto right = &$$->rightTable;
-		// while(right->rightTable != nullptr) right = &(*right)->rightTable;
-		// *right = std::make_unique<JoinSqlNode>();
-		// (*right)->leftTableName = $4;
-		// if($6 != nullptr) {
-		// 	(*right)->conditions.swap(*$6);
-		// 	delete $6;
-		// }
-		// free($4);
+		$$ = new JoinSqlNode;
+		$$->tableNames.swap($1->tableNames);
+		$$->tableNames.push_back($4);
+		free($4);
+		$$->conditions.reserve($1->conditions.size() + $6->size());
+		std::move($1->conditions.begin(), $1->conditions.end(), std::back_inserter($$->conditions));
+		std::move($6->begin(), $6->end(), std::back_inserter($$->conditions));
+		delete $6;
+		delete $1;
 	} 
 	| join COMMA join
 	{
-		$$ = $1;
-		JoinSqlNode* node = $$;
-		while(node->rightTable.get() != nullptr) node = node->rightTable.get();
-		node->rightTable.reset($3);
-		$3 = nullptr;
+		$$ = new JoinSqlNode;
+
+		$$->tableNames.reserve($1->tableNames.size() + $3->tableNames.size());
+		std::move($3->tableNames.begin(), $3->tableNames.end(), std::back_inserter($$->tableNames));
+		std::move($1->tableNames.begin(), $1->tableNames.end(), std::back_inserter($$->tableNames));
+
+		$$->conditions.reserve($1->conditions.size() + $3->conditions.size());
+		std::move($3->conditions.begin(), $3->conditions.end(), std::back_inserter($$->conditions));
+		std::move($1->conditions.begin(), $1->conditions.end(), std::back_inserter($$->conditions));
+
+		delete $1;
+		delete $3;
 	}
 	;
 calc_stmt:
