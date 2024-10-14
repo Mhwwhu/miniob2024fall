@@ -113,10 +113,13 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         LE
         GE
         NE
+		INNER
+		JOIN
 
 /** union 中定义各种数据类型，真实生成的代码也是union类型，所以不能有非POD类型的数据 **/
 %union {
   ParsedSqlNode *                            sql_node;
+  JoinSqlNode*                               join;
   ConditionSqlNode *                         condition;
   Value *                                    value;
   enum CompOp                                comp;
@@ -182,6 +185,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            help_stmt
 %type <sql_node>            exit_stmt
 %type <sql_node>            command_wrapper
+%type <join>            join
 // commands should be a list but I use a single command instead
 %type <sql_node>            commands
 
@@ -189,7 +193,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 	delete $$;
 } <value>
 %destructor {
-	delete $$;
+	free($$);
 } <string>
 %destructor {
 	delete $$;
@@ -476,7 +480,7 @@ update_stmt:      /*  update 语句的语法解析树*/
     }
     ;
 select_stmt:        /*  select 语句的语法解析树*/
-    SELECT expression_list FROM rel_list where group_by
+    SELECT expression_list FROM join where group_by
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
@@ -485,8 +489,8 @@ select_stmt:        /*  select 语句的语法解析树*/
       }
 
       if ($4 != nullptr) {
-        $$->selection.relations.swap(*$4);
-        delete $4;
+        $$->selection.joinedRelations.reset($4);
+		$4 = nullptr;
       }
 
       if ($5 != nullptr) {
@@ -500,6 +504,49 @@ select_stmt:        /*  select 语句的语法解析树*/
       }
     }
     ;
+join:
+	ID
+	{
+		$$ = new JoinSqlNode();
+		$$->leftTableName = $1;
+		$$->rightTable = nullptr;
+		free($1);
+	}
+	| ID INNER JOIN ID ON condition_list
+	{
+		// $$ = new JoinSqlNode();
+		// $$->leftTableName = $1;
+		// $$->rightTable = std::make_unique<JoinSqlNode>();
+		// $$->rightTable->leftTableName = $4;
+		// if($6 != nullptr) {
+		// 	$$->conditions.swap(*$6);
+		// 	delete $6;
+		// }
+		// free($1);
+		// free($4);
+	}
+	| join INNER JOIN ID ON condition_list
+	{
+		// $$ = $1;
+		// auto right = &$$->rightTable;
+		// while(right->rightTable != nullptr) right = &(*right)->rightTable;
+		// *right = std::make_unique<JoinSqlNode>();
+		// (*right)->leftTableName = $4;
+		// if($6 != nullptr) {
+		// 	(*right)->conditions.swap(*$6);
+		// 	delete $6;
+		// }
+		// free($4);
+	} 
+	| join COMMA join
+	{
+		$$ = $1;
+		JoinSqlNode* node = $$;
+		while(node->rightTable.get() != nullptr) node = node->rightTable.get();
+		node->rightTable.reset($3);
+		$3 = nullptr;
+	}
+	;
 calc_stmt:
     CALC expression_list
     {

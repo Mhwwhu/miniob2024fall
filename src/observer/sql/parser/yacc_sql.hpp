@@ -102,12 +102,14 @@ extern int yydebug;
     LE = 303,                      /* LE  */
     GE = 304,                      /* GE  */
     NE = 305,                      /* NE  */
-    NUMBER = 306,                  /* NUMBER  */
-    FLOAT = 307,                   /* FLOAT  */
-    ID = 308,                      /* ID  */
-    SSS = 309,                     /* SSS  */
-    DATE = 310,                    /* DATE  */
-    UMINUS = 311                   /* UMINUS  */
+    INNER = 306,                   /* INNER  */
+    JOIN = 307,                    /* JOIN  */
+    NUMBER = 308,                  /* NUMBER  */
+    FLOAT = 309,                   /* FLOAT  */
+    ID = 310,                      /* ID  */
+    SSS = 311,                     /* SSS  */
+    DATE = 312,                    /* DATE  */
+    UMINUS = 313                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -116,9 +118,10 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 118 "/home/haowen/miniob2023/miniob2023fall/src/observer/sql/parser/yacc_sql.y"
+#line 120 "/home/haowen/miniob2023/miniob2023fall/src/observer/sql/parser/yacc_sql.y"
 
   ParsedSqlNode *                            sql_node;
+  JoinSqlNode*                               join;
   ConditionSqlNode *                         condition;
   Value *                                    value;
   enum CompOp                                comp;
@@ -135,7 +138,7 @@ union YYSTYPE
   int                                        number;
   float                                      floats;
 
-#line 139 "/home/haowen/miniob2023/miniob2023fall/src/observer/sql/parser/yacc_sql.hpp"
+#line 142 "/home/haowen/miniob2023/miniob2023fall/src/observer/sql/parser/yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

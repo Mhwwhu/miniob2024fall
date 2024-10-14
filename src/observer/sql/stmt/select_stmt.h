@@ -2,7 +2,7 @@
 miniob is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
+		 http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
@@ -23,6 +23,7 @@ See the Mulan PSL v2 for more details. */
 
 class FieldMeta;
 class FilterStmt;
+class JoinStmt;
 class Db;
 class Table;
 
@@ -33,24 +34,26 @@ class Table;
 class SelectStmt : public Stmt
 {
 public:
-  SelectStmt() = default;
-  ~SelectStmt() override;
+	SelectStmt() = default;
+	~SelectStmt() override;
 
-  StmtType type() const override { return StmtType::SELECT; }
-
-public:
-  static RC create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt);
+	StmtType type() const override { return StmtType::SELECT; }
 
 public:
-  const std::vector<Table *> &tables() const { return tables_; }
-  FilterStmt                 *filter_stmt() const { return filter_stmt_; }
+	static RC create(Db* db, SelectSqlNode& select_sql, Stmt*& stmt);
 
-  std::vector<std::unique_ptr<Expression>> &query_expressions() { return query_expressions_; }
-  std::vector<std::unique_ptr<Expression>> &group_by() { return group_by_; }
+public:
+	const std::vector<Table*>& tables() const { return tables_; }
+	FilterStmt* filter_stmt() const { return filter_stmt_; }
+	JoinStmt* join_stmt() const { return join_stmt_; }
+
+	std::vector<std::unique_ptr<Expression>>& query_expressions() { return query_expressions_; }
+	std::vector<std::unique_ptr<Expression>>& group_by() { return group_by_; }
 
 private:
-  std::vector<std::unique_ptr<Expression>> query_expressions_;
-  std::vector<Table *>                     tables_;
-  FilterStmt                              *filter_stmt_ = nullptr;
-  std::vector<std::unique_ptr<Expression>> group_by_;
+	std::vector<std::unique_ptr<Expression>> query_expressions_;
+	std::vector<Table*>                     tables_;
+	JoinStmt* join_stmt_ = nullptr;
+	FilterStmt* filter_stmt_ = nullptr;
+	std::vector<std::unique_ptr<Expression>> group_by_;
 };

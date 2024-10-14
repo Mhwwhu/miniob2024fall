@@ -2,7 +2,7 @@
 miniob is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
+		 http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
@@ -25,10 +25,10 @@ class Db;
  * @file stmt.h
  */
 
-/**
- * @brief Statement的类型
- *
- */
+ /**
+  * @brief Statement的类型
+  *
+  */
 #define DEFINE_ENUM()            \
   DEFINE_ENUM_ITEM(CALC)         \
   DEFINE_ENUM_ITEM(SELECT)       \
@@ -50,24 +50,25 @@ class Db;
   DEFINE_ENUM_ITEM(EXIT)         \
   DEFINE_ENUM_ITEM(EXPLAIN)      \
   DEFINE_ENUM_ITEM(PREDICATE)    \
-  DEFINE_ENUM_ITEM(SET_VARIABLE)
+  DEFINE_ENUM_ITEM(SET_VARIABLE) \
+  DEFINE_ENUM_ITEM(JOIN)         \
 
 enum class StmtType
 {
 #define DEFINE_ENUM_ITEM(name) name,
-  DEFINE_ENUM()
+	DEFINE_ENUM()
 #undef DEFINE_ENUM_ITEM
 };
 
-inline const char *stmt_type_name(StmtType type)
+inline const char* stmt_type_name(StmtType type)
 {
-  switch (type) {
+	switch (type) {
 #define DEFINE_ENUM_ITEM(name) \
   case StmtType::name: return #name;
-    DEFINE_ENUM()
+		DEFINE_ENUM()
 #undef DEFINE_ENUM_ITEM
-    default: return "unkown";
-  }
+	default: return "unkown";
+	}
 }
 
 bool stmt_type_ddl(StmtType type);
@@ -81,13 +82,13 @@ bool stmt_type_ddl(StmtType type);
 class Stmt
 {
 public:
-  Stmt()          = default;
-  virtual ~Stmt() = default;
+	Stmt() = default;
+	virtual ~Stmt() = default;
 
-  virtual StmtType type() const = 0;
+	virtual StmtType type() const = 0;
 
 public:
-  static RC create_stmt(Db *db, ParsedSqlNode &sql_node, Stmt *&stmt);
+	static RC create_stmt(Db* db, ParsedSqlNode& sql_node, Stmt*& stmt);
 
 private:
 };

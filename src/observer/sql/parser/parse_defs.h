@@ -76,6 +76,17 @@ struct ConditionSqlNode
 };
 
 /**
+ * @brief 表示Join操作的节点
+ * @ingroup SQLParser
+ */
+struct JoinSqlNode
+{
+	std::string leftTableName;
+	std::unique_ptr<JoinSqlNode> rightTable;
+	std::vector<ConditionSqlNode> conditions;
+};
+
+/**
  * @brief 描述一个select语句
  * @ingroup SQLParser
  * @details 一个正常的select语句描述起来比这个要复杂很多，这里做了简化。
@@ -89,7 +100,7 @@ struct ConditionSqlNode
 struct SelectSqlNode
 {
 	std::vector<std::unique_ptr<Expression>> expressions;  ///< 查询的表达式
-	std::vector<std::string>                 relations;    ///< 查询的表
+	unique_ptr<JoinSqlNode>       joinedRelations;    ///< 查询的表
 	std::vector<ConditionSqlNode>            conditions;   ///< 查询条件，使用AND串联起来多个条件
 	std::vector<std::unique_ptr<Expression>> group_by;     ///< group by clause
 };
@@ -301,6 +312,7 @@ public:
 	LoadDataSqlNode     load_data;
 	ExplainSqlNode      explain;
 	SetVariableSqlNode  set_variable;
+	JoinSqlNode         join;
 
 public:
 	ParsedSqlNode();
