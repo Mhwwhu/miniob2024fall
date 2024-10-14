@@ -30,15 +30,14 @@ RC UpdatePhysicalOperator::open(Trx* trx)
 		Record& record = row_tuple->record();
 		records_.emplace_back(std::move(record));
 	}
+	child->close();
 	const FieldMeta* fieldMeta = table_->table_meta().field(attr_name_.c_str());
 	int offset = fieldMeta->offset();
-	int len = fieldMeta->len();
+	int len = std::min(fieldMeta->len(), value_.length());
 	for (Record& record : records_) {
 		Record newRecord = record;
-
+		memset(newRecord.data() + offset, 0, fieldMeta->len());
 		memcpy(newRecord.data() + offset, value_.data(), len);
-		cout << "offset = " << offset << endl;
-		cout << *(int*)(newRecord.data() + offset) << endl;
 		rc = trx_->update_record(table_, record, newRecord);
 		if (rc != RC::SUCCESS) {
 			LOG_WARN("failed to update record: %s", strrc(rc));

@@ -186,11 +186,14 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            commands
 
 %destructor {
-	free($$);
+	delete $$;
 } <value>
 %destructor {
-	free($$);
+	delete $$;
 } <string>
+%destructor {
+	delete $$;
+} <expression_list>
 
 %left '+' '-'
 %left '*' '/'

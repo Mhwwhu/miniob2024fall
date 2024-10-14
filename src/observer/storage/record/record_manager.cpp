@@ -358,7 +358,6 @@ RC RowRecordPageHandler::delete_record(const RID* rid)
 
 RC RowRecordPageHandler::update_record(const RID& rid, const char* data)
 {
-	cout << "update record" << endl;
 	ASSERT(rw_mode_ != ReadWriteMode::READ_ONLY, "cannot delete record from page while the page is readonly");
 
 	if (rid.slot_num >= page_header_->record_capacity) {
@@ -663,7 +662,6 @@ RC RecordFileHandler::delete_record(const RID* rid)
 RC RecordFileHandler::update_record(const char* data, int record_size, const RID* rid)
 {
 	RC rc = RC::SUCCESS;
-
 	unique_ptr<RecordPageHandler> record_page_handler(RecordPageHandler::create(storage_format_));
 
 	rc = record_page_handler->init(*disk_buffer_pool_, *log_handler_, rid->page_num, ReadWriteMode::READ_WRITE);
