@@ -32,6 +32,10 @@ RC UpdatePhysicalOperator::open(Trx* trx)
 	}
 	child->close();
 	const FieldMeta* fieldMeta = table_->table_meta().field(attr_name_.c_str());
+	if (fieldMeta == nullptr) {
+		LOG_WARN("unknown field: %s", attr_name_);
+		return RC::NOT_EXIST;
+	}
 	int offset = fieldMeta->offset();
 	int len = std::min(fieldMeta->len(), value_.length());
 	for (Record& record : records_) {
