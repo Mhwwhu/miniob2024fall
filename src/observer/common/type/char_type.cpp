@@ -28,6 +28,7 @@ RC CharType::set_value_from_str(Value& val, const string& data) const
 
 RC CharType::cast_to(const Value& val, AttrType type, Value& result) const
 {
+	Value tmp;
 	switch (type) {
 	case AttrType::CHARS:
 		result = val;
@@ -39,8 +40,11 @@ RC CharType::cast_to(const Value& val, AttrType type, Value& result) const
 		result = Value((float)atof(val.get_string().c_str()));
 		return RC::SUCCESS;
 	case AttrType::DATES:
-		DataType::type_instance(AttrType::DATES)->set_value_from_str(result, val.get_string());
-		return RC::SUCCESS;
+		if (OB_SUCC(DataType::type_instance(AttrType::DATES)->set_value_from_str(tmp, val.get_string()))) {
+			result = tmp;
+			return RC::SUCCESS;
+		}
+		return RC::UNSUPPORTED;
 	default: return RC::UNSUPPORTED;
 	}
 	return RC::SUCCESS;
