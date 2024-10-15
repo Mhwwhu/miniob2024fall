@@ -22,6 +22,9 @@ public:
 
 	RC to_string(const Value& val, string& result) const override;
 
+	RC cast_to(const Value& val, AttrType type, Value& result) const override;
+	int cast_cost(AttrType type) override;
+
 	static bool str_to_date(const char* str, int& date_i);
 private:
 	static const int startYear = 1000;

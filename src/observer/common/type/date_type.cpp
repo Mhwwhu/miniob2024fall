@@ -37,6 +37,32 @@ RC DateType::set_value_from_str(Value& val, const string& data) const
 	return RC::SUCCESS;
 }
 
+RC DateType::cast_to(const Value& val, AttrType type, Value& result) const
+{
+	switch (type) {
+	case AttrType::DATES:
+		result = val;
+		return RC::SUCCESS;
+	case AttrType::CHARS:
+		result = Value(val.to_string().c_str());
+		return RC::SUCCESS;
+	default:
+		return RC::UNSUPPORTED;
+	}
+}
+
+int DateType::cast_cost(AttrType type)
+{
+	switch (type) {
+	case AttrType::DATES:
+		return 0;
+	case AttrType::CHARS:
+		return 2;
+	default:
+		return INT32_MAX;
+	}
+}
+
 RC DateType::to_string(const Value& val, string& result) const
 {
 	stringstream ss;

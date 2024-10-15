@@ -67,6 +67,35 @@ RC IntegerType::set_value_from_str(Value& val, const string& data) const
 	}
 	return rc;
 }
+RC IntegerType::cast_to(const Value& val, AttrType type, Value& result) const
+{
+	switch (type) {
+	case AttrType::CHARS:
+		result = Value(val.to_string().c_str());
+		return RC::SUCCESS;
+	case AttrType::FLOATS:
+		result = Value(val.get_float());
+		return RC::SUCCESS;
+	case AttrType::INTS:
+		result = val;
+		return RC::SUCCESS;
+	default:
+		return RC::UNSUPPORTED;
+	}
+}
+int IntegerType::cast_cost(AttrType type)
+{
+	switch (type) {
+	case AttrType::INTS:
+		return 0;
+	case AttrType::FLOATS:
+		return 1;
+	case AttrType::CHARS:
+		return 2;
+	default:
+		return INT32_MAX;
+	}
+}
 
 RC IntegerType::to_string(const Value& val, string& result) const
 {
