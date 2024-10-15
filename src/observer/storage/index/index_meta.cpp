@@ -2,7 +2,7 @@
 miniob is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
+		 http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
@@ -20,52 +20,68 @@ See the Mulan PSL v2 for more details. */
 #include "json/json.h"
 
 const static Json::StaticString FIELD_NAME("name");
-const static Json::StaticString FIELD_FIELD_NAME("field_name");
+const static Json::StaticString FIELD_FIELD_NAME("field_name_list");
 
-RC IndexMeta::init(const char *name, const FieldMeta &field)
+RC IndexMeta::init(const char* name, const vector<const FieldMeta*>& field_list)
 {
-  if (common::is_blank(name)) {
-    LOG_ERROR("Failed to init index, name is empty.");
-    return RC::INVALID_ARGUMENT;
-  }
+	if (common::is_blank(name)) {
+		LOG_ERROR("Failed to init index, name is empty.");
+		return RC::INVALID_ARGUMENT;
+	}
 
-  name_  = name;
-  field_ = field.name();
-  return RC::SUCCESS;
+	name_ = name;
+	for (auto field : field_list) {
+		field_list_.push_back(field->name());
+	}
+	return RC::SUCCESS;
 }
 
-void IndexMeta::to_json(Json::Value &json_value) const
+void IndexMeta::to_json(Json::Value& json_value) const
 {
-  json_value[FIELD_NAME]       = name_;
-  json_value[FIELD_FIELD_NAME] = field_;
+	auto jsonArray = Json::Value(Json::arrayValue);
+	for (auto field : field_list_) {
+		jsonArray.append(field);
+	}
+	json_value[FIELD_NAME] = name_;
+	json_value[FIELD_FIELD_NAME] = jsonArray;
 }
 
-RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, IndexMeta &index)
+RC IndexMeta::from_json(const TableMeta& table, const Json::Value& json_value, IndexMeta& index)
 {
-  const Json::Value &name_value  = json_value[FIELD_NAME];
-  const Json::Value &field_value = json_value[FIELD_FIELD_NAME];
-  if (!name_value.isString()) {
-    LOG_ERROR("Index name is not a string. json value=%s", name_value.toStyledString().c_str());
-    return RC::INTERNAL;
-  }
+	const Json::Value& name_value = json_value[FIELD_NAME];
+	const Json::Value& field_list_value = json_value[FIELD_FIELD_NAME];
+	if (!name_value.isString()) {
+		LOG_ERROR("Index name is not a string. json value=%s", name_value.toStyledString().c_str());
+		return RC::INTERNAL;
+	}
 
-  if (!field_value.isString()) {
-    LOG_ERROR("Field name of index [%s] is not a string. json value=%s",
-        name_value.asCString(), field_value.toStyledString().c_str());
-    return RC::INTERNAL;
-  }
+	if (!field_list_value.isArray()) {
+		LOG_ERROR("Field name of index [%s] is not an array. json value=%s",
+			name_value.asCString(), field_list_value.toStyledString().c_str());
+		return RC::INTERNAL;
+	}
+	vector<const FieldMeta*> field_list;
+	for (auto fieldMeta : field_list_value) {
+		const FieldMeta* field = table.field(fieldMeta.asCString());
+		if (nullptr == field) {
+			LOG_ERROR("Deserialize index [%s]: no such field: %s", name_value.asCString(), fieldMeta.asCString());
+			return RC::SCHEMA_FIELD_MISSING;
+		}
+		field_list.push_back(field);
+	}
 
-  const FieldMeta *field = table.field(field_value.asCString());
-  if (nullptr == field) {
-    LOG_ERROR("Deserialize index [%s]: no such field: %s", name_value.asCString(), field_value.asCString());
-    return RC::SCHEMA_FIELD_MISSING;
-  }
-
-  return index.init(name_value.asCString(), *field);
+	return index.init(name_value.asCString(), field_list);
 }
 
-const char *IndexMeta::name() const { return name_.c_str(); }
+const char* IndexMeta::name() const { return name_.c_str(); }
 
-const char *IndexMeta::field() const { return field_.c_str(); }
+const vector<string>& IndexMeta::field_list() const { return field_list_; }
 
-void IndexMeta::desc(ostream &os) const { os << "index name=" << name_ << ", field=" << field_; }
+void IndexMeta::desc(ostream& os) const
+{
+	stringstream field_names;
+	for (auto field : field_list_) {
+		field_names << field << " ";
+	}
+	os << "index name=" << name_ << ", field=" << field_names.str();
+}

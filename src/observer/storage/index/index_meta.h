@@ -2,7 +2,7 @@
 miniob is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
+		 http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
@@ -21,7 +21,7 @@ class TableMeta;
 class FieldMeta;
 
 namespace Json {
-class Value;
+	class Value;
 }  // namespace Json
 
 /**
@@ -33,21 +33,21 @@ class Value;
 class IndexMeta
 {
 public:
-  IndexMeta() = default;
+	IndexMeta() = default;
 
-  RC init(const char *name, const FieldMeta &field);
-
-public:
-  const char *name() const;
-  const char *field() const;
-
-  void desc(ostream &os) const;
+	RC init(const char* name, const std::vector<const FieldMeta*>& field_list);
 
 public:
-  void      to_json(Json::Value &json_value) const;
-  static RC from_json(const TableMeta &table, const Json::Value &json_value, IndexMeta &index);
+	const char* name() const;
+	const vector<string>& field_list() const;
+
+	void desc(ostream& os) const;
+
+public:
+	void      to_json(Json::Value& json_value) const;
+	static RC from_json(const TableMeta& table, const Json::Value& json_value, IndexMeta& index);
 
 protected:
-  string name_;   // index's name
-  string field_;  // field's name
+	string name_;   // index's name
+	std::vector<string> field_list_;  // field's name
 };

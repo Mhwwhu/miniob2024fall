@@ -2,7 +2,7 @@
 miniob is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
+		 http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
@@ -30,59 +30,59 @@ class IndexScanner;
  * @details 索引可能会有很多种实现，比如B+树、哈希表等，这里定义了一个基类，用于描述索引的基本操作。
  */
 
-/**
- * @brief 索引基类
- * @ingroup Index
- */
+ /**
+  * @brief 索引基类
+  * @ingroup Index
+  */
 class Index
 {
 public:
-  Index()          = default;
-  virtual ~Index() = default;
+	Index() = default;
+	virtual ~Index() = default;
 
-  const IndexMeta &index_meta() const { return index_meta_; }
+	const IndexMeta& index_meta() const { return index_meta_; }
 
-  /**
-   * @brief 插入一条数据
-   *
-   * @param record 插入的记录，当前假设记录是定长的
-   * @param[out] rid    插入的记录的位置
-   */
-  virtual RC insert_entry(const char *record, const RID *rid) = 0;
+	/**
+	 * @brief 插入一条数据
+	 *
+	 * @param record 插入的记录，当前假设记录是定长的
+	 * @param[out] rid    插入的记录的位置
+	 */
+	virtual RC insert_entry(const char* record, const RID* rid) = 0;
 
-  /**
-   * @brief 删除一条数据
-   *
-   * @param record 删除的记录，当前假设记录是定长的
-   * @param[in] rid   删除的记录的位置
-   */
-  virtual RC delete_entry(const char *record, const RID *rid) = 0;
+	/**
+	 * @brief 删除一条数据
+	 *
+	 * @param record 删除的记录，当前假设记录是定长的
+	 * @param[in] rid   删除的记录的位置
+	 */
+	virtual RC delete_entry(const char* record, const RID* rid) = 0;
 
-  /**
-   * @brief 创建一个索引数据的扫描器
-   *
-   * @param left_key 要扫描的左边界
-   * @param left_len 左边界的长度
-   * @param left_inclusive 是否包含左边界
-   * @param right_key 要扫描的右边界
-   * @param right_len 右边界的长度
-   * @param right_inclusive 是否包含右边界
-   */
-  virtual IndexScanner *create_scanner(const char *left_key, int left_len, bool left_inclusive, const char *right_key,
-      int right_len, bool right_inclusive) = 0;
+	/**
+	 * @brief 创建一个索引数据的扫描器
+	 *
+	 * @param left_key 要扫描的左边界
+	 * @param left_len 左边界的长度
+	 * @param left_inclusive 是否包含左边界
+	 * @param right_key 要扫描的右边界
+	 * @param right_len 右边界的长度
+	 * @param right_inclusive 是否包含右边界
+	 */
+	virtual IndexScanner* create_scanner(vector<pair<const char*, int>> left_keys, int left_len, bool left_inclusive,
+		vector<pair<const char*, int>> right_keys, int right_len, bool right_inclusive) = 0;
 
-  /**
-   * @brief 同步索引数据到磁盘
-   *
-   */
-  virtual RC sync() = 0;
-
-protected:
-  RC init(const IndexMeta &index_meta, const FieldMeta &field_meta);
+	/**
+	 * @brief 同步索引数据到磁盘
+	 *
+	 */
+	virtual RC sync() = 0;
 
 protected:
-  IndexMeta index_meta_;  ///< 索引的元数据
-  FieldMeta field_meta_;  ///< 当前实现仅考虑一个字段的索引
+	RC init(const IndexMeta& index_meta, const vector<const FieldMeta*>& field_meta_list);
+
+protected:
+	IndexMeta index_meta_;  ///< 索引的元数据
+	vector<const FieldMeta*> field_meta_list_;  ///< 实现多字段索引
 };
 
 /**
@@ -92,13 +92,13 @@ protected:
 class IndexScanner
 {
 public:
-  IndexScanner()          = default;
-  virtual ~IndexScanner() = default;
+	IndexScanner() = default;
+	virtual ~IndexScanner() = default;
 
-  /**
-   * 遍历元素数据
-   * 如果没有更多的元素，返回RECORD_EOF
-   */
-  virtual RC next_entry(RID *rid) = 0;
-  virtual RC destroy()            = 0;
+	/**
+	 * 遍历元素数据
+	 * 如果没有更多的元素，返回RECORD_EOF
+	 */
+	virtual RC next_entry(RID* rid) = 0;
+	virtual RC destroy() = 0;
 };

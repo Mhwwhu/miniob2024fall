@@ -2,7 +2,7 @@
 miniob is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
+		 http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
@@ -29,23 +29,23 @@ class FieldMeta;
 class CreateIndexStmt : public Stmt
 {
 public:
-  CreateIndexStmt(Table *table, const FieldMeta *field_meta, const std::string &index_name)
-      : table_(table), field_meta_(field_meta), index_name_(index_name)
-  {}
+	CreateIndexStmt(Table* table, const std::vector<const FieldMeta*>& field_meta_list, std::string index_name)
+		: table_(table), field_meta_list_(field_meta_list), index_name_(index_name)
+	{}
 
-  virtual ~CreateIndexStmt() = default;
+	virtual ~CreateIndexStmt() = default;
 
-  StmtType type() const override { return StmtType::CREATE_INDEX; }
+	StmtType type() const override { return StmtType::CREATE_INDEX; }
 
-  Table             *table() const { return table_; }
-  const FieldMeta   *field_meta() const { return field_meta_; }
-  const std::string &index_name() const { return index_name_; }
+	Table* table() const { return table_; }
+	std::vector<const FieldMeta*> field_meta_list() const { return field_meta_list_; }
+	const std::string& index_name() const { return index_name_; }
 
 public:
-  static RC create(Db *db, const CreateIndexSqlNode &create_index, Stmt *&stmt);
+	static RC create(Db* db, const CreateIndexSqlNode& create_index, Stmt*& stmt);
 
 private:
-  Table           *table_      = nullptr;
-  const FieldMeta *field_meta_ = nullptr;
-  std::string      index_name_;
+	Table* table_ = nullptr;
+	std::vector<const FieldMeta*> field_meta_list_;
+	std::string      index_name_;
 };

@@ -207,20 +207,24 @@ RC Table::open(Db* db, const char* meta_file, const char* base_dir)
 
 	const int index_num = table_meta_.index_num();
 	for (int i = 0; i < index_num; i++) {
+		vector<const FieldMeta*> field_meta_list;
 		const IndexMeta* index_meta = table_meta_.index(i);
-		const FieldMeta* field_meta = table_meta_.field(index_meta->field());
-		if (field_meta == nullptr) {
-			LOG_ERROR("Found invalid index meta info which has a non-exists field. table=%s, index=%s, field=%s",
-				name(), index_meta->name(), index_meta->field());
-			// skip cleanup
-			//  do all cleanup action in destructive Table function
-			return RC::INTERNAL;
+		for (string field : index_meta->field_list()) {
+			const FieldMeta* field_meta = table_meta_.field(field.c_str());
+			if (field_meta == nullptr) {
+				LOG_ERROR("Found invalid index meta info which has a non-exists field. table=%s, index=%s, field=%s",
+					name(), index_meta->name(), field);
+				// skip cleanup
+				//  do all cleanup action in destructive Table function
+				return RC::INTERNAL;
+			}
+			field_meta_list.push_back(field_meta);
 		}
 
 		BplusTreeIndex* index = new BplusTreeIndex();
 		string          index_file = table_index_file(base_dir, name(), index_meta->name());
 
-		rc = index->open(this, index_file.c_str(), *index_meta, *field_meta);
+		rc = index->open(this, index_file.c_str(), *index_meta, field_meta_list);
 		if (rc != RC::SUCCESS) {
 			delete index;
 			LOG_ERROR("Failed to open index. table=%s, index=%s, file=%s, rc=%s",
@@ -404,27 +408,37 @@ RC Table::get_chunk_scanner(ChunkFileScanner& scanner, Trx* trx, ReadWriteMode m
 	return rc;
 }
 
-RC Table::create_index(Trx* trx, const FieldMeta* field_meta, const char* index_name)
+RC Table::create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta_list, const char* index_name)
 {
-	if (common::is_blank(index_name) || nullptr == field_meta) {
-		LOG_INFO("Invalid input arguments, table name is %s, index_name is blank or attribute_name is blank", name());
+	if (common::is_blank(index_name) || field_meta_list.empty()) {
+		LOG_INFO("Invalid input arguments, table name is %s, index_name is blank or attribute_name_list is blank", name());
 		return RC::INVALID_ARGUMENT;
+	}
+	for (auto field_meta : field_meta_list) {
+		if (field_meta == nullptr) {
+			LOG_INFO("Invalid input arguments, table name is %s, attribute_name is missing", name());
+			return RC::INVALID_ARGUMENT;
+		}
 	}
 
 	IndexMeta new_index_meta;
 
-	RC rc = new_index_meta.init(index_name, *field_meta);
+	RC rc = new_index_meta.init(index_name, field_meta_list);
 	if (rc != RC::SUCCESS) {
+		stringstream field_names;
+		for (auto field_meta : field_meta_list) {
+			field_names << field_meta->name() << " ";
+		}
 		LOG_INFO("Failed to init IndexMeta in table:%s, index_name:%s, field_name:%s",
-			name(), index_name, field_meta->name());
+			name(), index_name, field_names.str());
 		return rc;
 	}
-
+	// TODO
 	// 创建索引相关数据
 	BplusTreeIndex* index = new BplusTreeIndex();
 	string          index_file = table_index_file(base_dir_.c_str(), name(), index_name);
 
-	rc = index->create(this, index_file.c_str(), new_index_meta, *field_meta);
+	rc = index->create(this, index_file.c_str(), new_index_meta, field_meta_list);
 	if (rc != RC::SUCCESS) {
 		delete index;
 		LOG_ERROR("Failed to create bplus tree index. file name=%s, rc=%d:%s", index_file.c_str(), rc, strrc(rc));
@@ -580,14 +594,18 @@ Index* Table::find_index(const char* index_name) const
 	}
 	return nullptr;
 }
-Index* Table::find_index_by_field(const char* field_name) const
+vector<Index*> Table::find_index_by_field(const char* field_name) const
 {
 	const TableMeta& table_meta = this->table_meta();
-	const IndexMeta* index_meta = table_meta.find_index_by_field(field_name);
-	if (index_meta != nullptr) {
-		return this->find_index(index_meta->name());
+	auto index_meta_list = table_meta.find_index_by_field(field_name);
+	vector<Index*> result;
+	for (auto index_meta : index_meta_list) {
+		Index* idx;
+		if (idx = find_index(index_meta->name())) {
+			result.push_back(idx);
+		}
 	}
-	return nullptr;
+	return result;
 }
 
 RC Table::sync()

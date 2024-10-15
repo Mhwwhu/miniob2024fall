@@ -133,7 +133,8 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator& table_get_oper, u
 	// 看看是否有可以用于索引查找的表达式
 	Table* table = table_get_oper.table();
 
-	Index* index = nullptr;
+	// TODO 支持多重索引
+	Index* index;
 	ValueExpr* value_expr = nullptr;
 	for (auto& expr : predicates) {
 		if (expr->type() == ExprType::COMPARISON) {
@@ -167,7 +168,7 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator& table_get_oper, u
 			}
 
 			const Field& field = field_expr->field();
-			index = table->find_index_by_field(field.field_name());
+			index = table->find_index_by_field(field.field_name()).front();
 			if (nullptr != index) {
 				break;
 			}

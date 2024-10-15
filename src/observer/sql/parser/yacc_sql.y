@@ -132,6 +132,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   std::vector<ConditionSqlNode> *            condition_list;
   std::vector<RelAttrSqlNode> *              rel_attr_list;
   std::vector<std::string> *                 relation_list;
+  std::vector<std::string> *                 attr_name_list;
   char *                                     string;
   int                                        number;
   float                                      floats;
@@ -185,7 +186,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            help_stmt
 %type <sql_node>            exit_stmt
 %type <sql_node>            command_wrapper
-%type <join>            join
+%type <join>                join
+%type <attr_name_list>      attr_list
 // commands should be a list but I use a single command instead
 %type <sql_node>            commands
 
@@ -291,18 +293,32 @@ desc_table_stmt:
     ;
 
 create_index_stmt:    /*create index 语句的语法解析树*/
-    CREATE INDEX ID ON ID LBRACE ID RBRACE
+    CREATE INDEX ID ON ID LBRACE attr_list RBRACE
     {
       $$ = new ParsedSqlNode(SCF_CREATE_INDEX);
       CreateIndexSqlNode &create_index = $$->create_index;
       create_index.index_name = $3;
       create_index.relation_name = $5;
-      create_index.attribute_name = $7;
+      create_index.attribute_names = $7;
       free($3);
       free($5);
-      free($7);
+	  delete $7;
     }
     ;
+attr_list:
+	ID
+	{
+		$$ = new std::vector<std::string>();
+		$$->push_back($1);
+		free($1);
+	}
+	| attr_list COMMA ID
+	{
+		$$ = $1;
+		$$->push_back($3);
+		free($3);
+	}
+	;
 
 drop_index_stmt:      /*drop index 语句的语法解析树*/
     DROP INDEX ID ON ID
