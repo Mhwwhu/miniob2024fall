@@ -96,6 +96,7 @@ public:
 		for (int i = 0; i < type_list.size(); i++) {
 			attr_comparator_list_[i].init(type_list[i].first, type_list[i].second);
 			tot_attr_length_ += attr_comparator_list_[i].attr_length();
+			attr_length_list_.push_back(attr_comparator_list_[i].attr_length());
 		}
 	}
 
@@ -103,8 +104,10 @@ public:
 
 	int operator()(const char* v1, const char* v2) const
 	{
-		for (auto attr_comp : attr_comparator_list_) {
-			int result = attr_comp(v1, v2);
+		int offset = 0;
+		for (int i = 0; i < attr_comparator_list_.size(); i++) {
+			int result = attr_comparator_list_[i](v1 + offset, v2 + offset);
+			offset += attr_length_list_[i];
 			if (result != 0) {
 				return result;
 			}
@@ -118,6 +121,7 @@ public:
 private:
 	vector<AttrComparator> attr_comparator_list_;
 	int tot_attr_length_;
+	vector<int> attr_length_list_;
 };
 
 /**
@@ -526,7 +530,7 @@ public:
 	 * @param key_len user_key的长度
 	 * @param rid  返回值，记录记录所在的页面号和slot
 	 */
-	RC get_entry(vector<pair<const char*, int>> user_keys, int key_len, list<RID>& rids);
+	RC get_entry(vector<pair<const char*, int>> user_keys, list<RID>& rids);
 
 	RC sync();
 
@@ -699,10 +703,11 @@ public:
 	 * @param right_user_keys 扫描范围的右边界。如果是empty，则没有右边界
 	 * @param right_len right_user_key 的内存大小(只有在变长字段中才会关注)
 	 * @param right_inclusive 右边界的值是否包含在内
+	 * @warning 此处的user_keys长度不固定，如果遇到CHAR类型的字段，则其长度为实际长度，而非field_meta定义的长度
 	 * TODO 重构参数表示方法
 	 */
-	RC open(vector<pair<const char*, int>> left_user_keys, int left_len, bool left_inclusive,
-		vector<pair<const char*, int>> right_user_keys, int right_len, bool right_inclusive);
+	RC open(vector<pair<const char*, int>> left_user_keys, vector<bool> left_inclusive,
+		vector<pair<const char*, int>> right_user_keys, vector<bool> right_inclusive);
 
 	/**
 	 * @brief 获取下一条记录
@@ -725,7 +730,7 @@ private:
 	/**
 	 * 如果key的类型是CHARS, 扩展或缩减user_key的大小刚好是schema中定义的大小
 	 */
-	RC fix_user_key(const char* user_key, int key_len, bool want_greater, char** fixed_key, bool* should_inclusive);
+	RC fix_user_key(const char* user_key, int key_len, bool want_greater, char** fixed_key, bool* need_inclusive);
 
 	void fetch_item(RID& rid);
 

@@ -594,7 +594,7 @@ Index* Table::find_index(const char* index_name) const
 	}
 	return nullptr;
 }
-vector<Index*> Table::find_index_by_field(const char* field_name) const
+vector<Index*> Table::find_indexes_by_field(const char* field_name) const
 {
 	const TableMeta& table_meta = this->table_meta();
 	auto index_meta_list = table_meta.find_index_by_field(field_name);
@@ -606,6 +606,34 @@ vector<Index*> Table::find_index_by_field(const char* field_name) const
 		}
 	}
 	return result;
+}
+
+Index* Table::find_index_by_field_list(const vector<const char*>& field_name_list) const
+{
+	const TableMeta& table_meta = this->table_meta();
+	int max_match = 0;
+	Index* candidate = nullptr;
+	for (auto index : indexes_) {
+		int match = 0;
+		for (auto field_name : index->index_meta().field_list()) {
+			if (std::find_if(field_name_list.begin(), field_name_list.end(),
+				[=](const char* s) {return strcmp(s, field_name.c_str()) == 0;}) != field_name_list.end()) {
+				match++;
+				continue;
+			}
+			// 确定候选index的逻辑为：优先选择匹配最多field的index，在匹配数量相同的情况下，优先选择短的index
+			if (match > max_match) {
+				candidate = index;
+				max_match = match;
+			}
+			else if (match == max_match &&
+				index->index_meta().field_list().size() < candidate->index_meta().field_list().size()) {
+				candidate = index;
+			}
+			break;
+		}
+	}
+	return candidate;
 }
 
 RC Table::sync()

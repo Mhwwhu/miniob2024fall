@@ -136,6 +136,8 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator& table_get_oper, u
 	// TODO 支持多重索引
 	Index* index;
 	ValueExpr* value_expr = nullptr;
+	vector<const char*> field_list;
+	vector<const Value*> value_list;
 	for (auto& expr : predicates) {
 		if (expr->type() == ExprType::COMPARISON) {
 			auto comparison_expr = static_cast<ComparisonExpr*>(expr.get());
@@ -168,24 +170,23 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator& table_get_oper, u
 			}
 
 			const Field& field = field_expr->field();
-			index = table->find_index_by_field(field.field_name()).front();
-			if (nullptr != index) {
-				break;
-			}
+			value_list.push_back(&value_expr->get_value());
+			field_list.push_back(field.field_name());
 		}
 	}
 
+	// 根据field_list查找最合适的索引
+	index = table->find_index_by_field_list(field_list);
+
 	if (index != nullptr) {
 		ASSERT(value_expr != nullptr, "got an index but value expr is null ?");
-
-		const Value& value = value_expr->get_value();
 		IndexScanPhysicalOperator* index_scan_oper = new IndexScanPhysicalOperator(table,
 			index,
 			table_get_oper.read_write_mode(),
-			&value,
-			true /*left_inclusive*/,
-			&value,
-			true /*right_inclusive*/);
+			value_list,
+			vector<bool>(value_list.size(), true) /*left_inclusive*/,
+			value_list,
+			vector<bool>(value_list.size(), true) /*right_inclusive*/);
 
 		index_scan_oper->set_predicates(std::move(predicates));
 		oper = unique_ptr<PhysicalOperator>(index_scan_oper);

@@ -68,8 +68,8 @@ public:
 	 * @param right_len 右边界的长度
 	 * @param right_inclusive 是否包含右边界
 	 */
-	virtual IndexScanner* create_scanner(vector<pair<const char*, int>> left_keys, int left_len, bool left_inclusive,
-		vector<pair<const char*, int>> right_keys, int right_len, bool right_inclusive) = 0;
+	virtual IndexScanner* create_scanner(vector<pair<const char*, int>> left_keys, vector<bool> left_inclusive,
+		vector<pair<const char*, int>> right_keys, vector<bool> right_inclusive) = 0;
 
 	/**
 	 * @brief 同步索引数据到磁盘

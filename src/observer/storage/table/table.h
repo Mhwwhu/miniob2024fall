@@ -123,7 +123,9 @@ private:
 
 public:
 	Index* find_index(const char* index_name) const;
-	vector<Index*> find_index_by_field(const char* field_name) const;
+	vector<Index*> find_indexes_by_field(const char* field_name) const;
+	// 找到最合适的index，原则为最长匹配
+	Index* find_index_by_field_list(const vector<const char*>& field_name_list) const;
 
 private:
 	Db* db_ = nullptr;
