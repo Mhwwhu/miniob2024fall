@@ -486,6 +486,8 @@ RC Table::create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta
 				name(), index_name, strrc(rc));
 			// 撤销索引的创建，删除已经生成的文件
 			scanner.close_scan();
+			BufferPoolManager& bpm = db_->buffer_pool_manager();
+			bpm.delete_file(index_file.c_str());
 			return rc;
 		}
 	}

@@ -106,6 +106,7 @@ RC BplusTreeIndex::insert_entry(const char* record, const RID* rid)
 	for (auto fieldMeta : index_meta_.field_list()) {
 		user_keys.push_back({ fieldMeta->offset() + record, fieldMeta->len() });
 	}
+
 	return index_handler_.insert_entry(user_keys, rid);
 }
 
