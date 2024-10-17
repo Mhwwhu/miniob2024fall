@@ -31,16 +31,28 @@ using namespace common;
  */
 #define FIRST_INDEX_PAGE 1
 
-int calc_internal_page_capacity(int attr_length)
+int calc_internal_page_capacity(int attr_length, bool unique)
 {
-	int item_size = attr_length + sizeof(RID) + sizeof(PageNum);
+	int item_size;
+	if (unique) {
+		item_size = attr_length + sizeof(PageNum);
+	}
+	else {
+		item_size = attr_length + sizeof(RID) + sizeof(PageNum);
+	}
 	int capacity = ((int)BP_PAGE_DATA_SIZE - InternalIndexNode::HEADER_SIZE) / item_size;
 	return capacity;
 }
 
-int calc_leaf_page_capacity(int attr_length)
+int calc_leaf_page_capacity(int attr_length, bool unique)
 {
-	int item_size = attr_length + sizeof(RID) + sizeof(RID);
+	int item_size;
+	if (unique) {
+		item_size = attr_length + sizeof(RID);
+	}
+	else {
+		item_size = attr_length + sizeof(RID) + sizeof(RID);
+	}
 	int capacity = ((int)BP_PAGE_DATA_SIZE - LeafIndexNode::HEADER_SIZE) / item_size;
 	return capacity;
 }
@@ -168,6 +180,9 @@ RC IndexNodeHandler::recover_insert_items(int index, const char* items, int num)
 	}
 
 	memcpy(__item_at(index), items, static_cast<size_t>(num) * item_size);
+	cout << "frame: " << this->frame_->frame_id().page_num() << " is_leaf:" << this->is_leaf() << endl;
+	cout << "increase size by " << num << endl;
+	cout << "size is " << size() << endl;
 	increase_size(num);
 	return RC::SUCCESS;
 }
@@ -178,7 +193,9 @@ RC IndexNodeHandler::recover_remove_items(int index, int num)
 	if (index < size() - num) {
 		memmove(__item_at(index), __item_at(index + num), (static_cast<size_t>(size()) - index - num) * item_size);
 	}
-
+	cout << "frame: " << this->frame_->frame_id().page_num() << " is_leaf:" << this->is_leaf() << endl;
+	cout << "decrease size by " << num << endl;
+	cout << "size is " << size() << endl;
 	increase_size(-num);
 	return RC::SUCCESS;
 }
@@ -320,6 +337,8 @@ RC LeafIndexNodeHandler::move_to(LeafIndexNodeHandler& other)
 	if (OB_FAIL(rc)) {
 		LOG_WARN("failed to log shrink leaf node. rc=%s", strrc(rc));
 	}
+	cout << "frame: " << this->frame_->frame_id().page_num() << " is_leaf:" << this->is_leaf() << endl;
+	cout << "move node, decrease size by " << size() << endl;
 	this->increase_size(-this->size());
 
 	return RC::SUCCESS;
@@ -464,6 +483,9 @@ RC InternalIndexNodeHandler::create_new_root(PageNum first_page_num, const char*
 	memcpy(__value_at(0), &first_page_num, value_size());
 	memcpy(__item_at(1), key, key_size());
 	memcpy(__value_at(1), &page_num, value_size());
+	cout << "frame: " << this->frame_->frame_id().page_num() << " is_leaf:" << this->is_leaf() << endl;
+	cout << "create new root: increase size by 2" << endl;
+	cout << "size is " << size() << endl;
 	increase_size(2);
 	return RC::SUCCESS;
 }
@@ -506,6 +528,9 @@ RC InternalIndexNodeHandler::move_half_to(InternalIndexNodeHandler& other)
 	}
 
 	mtr_.logger().node_remove_items(*this, move_index, span<const char>(__item_at(move_index), move_num * item_size()), move_num);
+	cout << "frame: " << this->frame_->frame_id().page_num() << " is_leaf:" << this->is_leaf() << endl;
+	cout << "move half to other node: decrease size by " << size - move_index << endl;
+	cout << "size is " << this->size() << endl;
 	increase_size(-(size - move_index));
 	return rc;
 }
@@ -628,6 +653,9 @@ RC InternalIndexNodeHandler::move_last_to_front(InternalIndexNodeHandler& other)
 		LOG_WARN("failed to log shrink internal node. rc=%d:%s", rc, strrc(rc));
 		return rc;
 	}
+	cout << "frame: " << this->frame_->frame_id().page_num() << " is_leaf:" << this->is_leaf() << endl;
+	cout << "move last to front: decrease size by 1" << endl;
+	cout << "size is" << size() << endl;
 	increase_size(-1);
 	return rc;
 }
@@ -803,6 +831,7 @@ RC BplusTreeHandler::sync()
 RC BplusTreeHandler::create(LogHandler& log_handler,
 	BufferPoolManager& bpm,
 	const char* file_name,
+	bool unique,
 	vector<std::pair<AttrType, int>> attr_type_list,
 	int internal_max_size /* = -1*/,
 	int leaf_max_size /* = -1 */)
@@ -823,7 +852,7 @@ RC BplusTreeHandler::create(LogHandler& log_handler,
 	}
 	LOG_INFO("Successfully open index file %s.", file_name);
 
-	rc = this->create(log_handler, *bp, attr_type_list, internal_max_size, leaf_max_size);
+	rc = this->create(log_handler, *bp, attr_type_list, internal_max_size, leaf_max_size, unique);
 	if (OB_FAIL(rc)) {
 		bpm.close_file(file_name);
 		return rc;
@@ -836,6 +865,7 @@ RC BplusTreeHandler::create(LogHandler& log_handler,
 RC BplusTreeHandler::create(LogHandler& log_handler,
 	DiskBufferPool& buffer_pool,
 	vector<std::pair<AttrType, int>> attr_type_list,
+	bool unique,
 	int internal_max_size /* = -1 */,
 	int leaf_max_size /* = -1 */)
 {
@@ -844,10 +874,10 @@ RC BplusTreeHandler::create(LogHandler& log_handler,
 		attr_length += attr_type.second;
 	}
 	if (internal_max_size < 0) {
-		internal_max_size = calc_internal_page_capacity(attr_length);
+		internal_max_size = calc_internal_page_capacity(attr_length, unique);
 	}
 	if (leaf_max_size < 0) {
-		leaf_max_size = calc_leaf_page_capacity(attr_length);
+		leaf_max_size = calc_leaf_page_capacity(attr_length, unique);
 	}
 
 	log_handler_ = &log_handler;
@@ -874,10 +904,11 @@ RC BplusTreeHandler::create(LogHandler& log_handler,
 	char* pdata = header_frame->data();
 	IndexFileHeader* file_header = (IndexFileHeader*)pdata;
 	file_header->attr_length = attr_length;
-	file_header->key_length = attr_length + sizeof(RID);
+	file_header->key_length = unique ? attr_length : attr_length + sizeof(RID);
 	file_header->internal_max_size = internal_max_size;
 	file_header->leaf_max_size = leaf_max_size;
 	file_header->root_page = BP_INVALID_PAGE_NUM;
+	file_header->unique = unique;
 	attr_type_list_ = attr_type_list;
 
 	// 取消记录日志的原因请参考下面的sync调用的地方。
@@ -895,8 +926,8 @@ RC BplusTreeHandler::create(LogHandler& log_handler,
 		return RC::NOMEM;
 	}
 
-	key_comparator_.init(attr_type_list);
-	key_printer_.init(attr_type_list);
+	key_comparator_.init(attr_type_list, unique);
+	key_printer_.init(attr_type_list, unique);
 
 	/*
 	虽然我们针对B+树记录了WAL，但是我们记录的都是逻辑日志，并没有记录某个页面如何修改的物理日志。
@@ -975,8 +1006,8 @@ RC BplusTreeHandler::open(LogHandler& log_handler, DiskBufferPool& buffer_pool, 
 		index_meta.field_list().end(),
 		attr_type_list.begin(),
 		[](const FieldMeta* field) {return pair<AttrType, int>(field->type(), field->len());});
-	key_comparator_.init(attr_type_list);
-	key_printer_.init(attr_type_list);
+	key_comparator_.init(attr_type_list, index_meta.unique());
+	key_printer_.init(attr_type_list, index_meta.unique());
 	LOG_INFO("Successfully open index");
 	return RC::SUCCESS;
 }
@@ -1463,8 +1494,8 @@ RC BplusTreeHandler::recover_init_header_page(BplusTreeMiniTransaction& mtr, Fra
 	header_dirty_ = false;
 	frame->mark_dirty();
 
-	key_comparator_.init(attr_type_list_);
-	key_printer_.init(attr_type_list_);
+	key_comparator_.init(attr_type_list_, header.unique);
+	key_printer_.init(attr_type_list_, header.unique);
 
 	return RC::SUCCESS;
 }
@@ -1522,8 +1553,9 @@ MemPoolItem::item_unique_ptr BplusTreeHandler::make_key(vector<pair<const char*,
 		memcpy(static_cast<char*>(key.get()) + offset, user_key.first, user_key.second);
 		offset += user_key.second;
 	}
-
-	memcpy(static_cast<char*>(key.get()) + file_header_.attr_length, &rid, sizeof(rid));
+	if (!file_header_.unique) {
+		memcpy(static_cast<char*>(key.get()) + file_header_.attr_length, &rid, sizeof(rid));
+	}
 	return key;
 }
 
@@ -1846,7 +1878,6 @@ RC BplusTreeHandler::delete_entry(vector<pair<const char*, int>> user_keys, cons
 		LOG_WARN("failed to find leaf page. rc =%s", strrc(rc));
 		return rc;
 	}
-
 	rc = delete_entry_internal(mtr, leaf_frame, key);
 	return rc;
 }

@@ -89,8 +89,9 @@ private:
 class KeyComparator
 {
 public:
-	void init(vector<std::pair<AttrType, int>> type_list)
+	void init(vector<std::pair<AttrType, int>> type_list, bool unique)
 	{
+		unique_ = unique;
 		tot_attr_length_ = 0;
 		attr_comparator_list_.resize(type_list.size());
 		for (int i = 0; i < (int)type_list.size(); i++) {
@@ -101,6 +102,7 @@ public:
 	}
 
 	const vector<AttrComparator>& attr_comparator_list() const { return attr_comparator_list_; }
+	bool unique() const { return unique_; }
 
 	int operator()(const char* v1, const char* v2) const
 	{
@@ -112,16 +114,19 @@ public:
 				return result;
 			}
 		}
-
-		const RID* rid1 = (const RID*)(v1 + tot_attr_length_);
-		const RID* rid2 = (const RID*)(v2 + tot_attr_length_);
-		return RID::compare(rid1, rid2);
+		if (!unique_) {
+			const RID* rid1 = (const RID*)(v1 + tot_attr_length_);
+			const RID* rid2 = (const RID*)(v2 + tot_attr_length_);
+			return RID::compare(rid1, rid2);
+		}
+		return 0;
 	}
 
 private:
 	vector<AttrComparator> attr_comparator_list_;
 	int tot_attr_length_;
 	vector<int> attr_length_list_;
+	bool unique_;
 };
 
 /**
@@ -157,8 +162,9 @@ private:
 class KeyPrinter
 {
 public:
-	void init(vector<std::pair<AttrType, int>> type_list)
+	void init(vector<std::pair<AttrType, int>> type_list, bool unique)
 	{
+		unique_ = unique;
 		tot_attr_length_ = 0;
 		attr_printer_list_.resize(type_list.size());
 		for (int i = 0; i < (int)type_list.size(); i++) {
@@ -168,6 +174,7 @@ public:
 	}
 
 	const vector<AttrPrinter>& attr_printer_list() const { return attr_printer_list_; }
+	bool unique() const { return unique_; }
 
 	string operator()(const char* v) const
 	{
@@ -176,15 +183,20 @@ public:
 		for (auto attr_printer : attr_printer_list_) {
 			ss << attr_printer(v) << ", ";
 		}
-
-		const RID* rid = (const RID*)(v + tot_attr_length_);
-		ss << "rid:{" << rid->to_string() << "}}";
+		if (!unique_) {
+			const RID* rid = (const RID*)(v + tot_attr_length_);
+			ss << "rid:{" << rid->to_string() << "}}";
+		}
+		else {
+			ss << "}";
+		}
 		return ss.str();
 	}
 
 private:
 	vector<AttrPrinter> attr_printer_list_;
 	int tot_attr_length_;
+	bool unique_;
 };
 
 /**
@@ -204,7 +216,9 @@ struct IndexFileHeader
 	int32_t  internal_max_size;  ///< 内部节点最大的键值对数
 	int32_t  leaf_max_size;      ///< 叶子节点最大的键值对数
 	int32_t  attr_length;        ///< 键值的长度
-	int32_t  key_length;         ///< attr length + sizeof(RID)
+	int32_t  key_length;         ///< attr length + sizeof(RID)，如果是unique，则只有attr_length
+	bool unique;
+
 	const string to_string() const
 	{
 		stringstream ss;
@@ -213,7 +227,8 @@ struct IndexFileHeader
 			<< "key_length:" << key_length << ","
 			<< "root_page:" << root_page << ","
 			<< "internal_max_size:" << internal_max_size << ","
-			<< "leaf_max_size:" << leaf_max_size << ";";
+			<< "leaf_max_size:" << leaf_max_size << ","
+			<< "unique:" << unique << ";";
 
 		return ss.str();
 	}
@@ -482,11 +497,12 @@ public:
 	 * @param attr_length 属性长度
 	 * @param internal_max_size 内部节点最大大小
 	 * @param leaf_max_size 叶子节点最大大小
+	 * @param unique 是否是unique索引
 	 */
-	RC create(LogHandler& log_handler, BufferPoolManager& bpm, const char* file_name,
+	RC create(LogHandler& log_handler, BufferPoolManager& bpm, const char* file_name, bool unique,
 		vector<std::pair<AttrType, int>> attr_type_list, int internal_max_size = -1, int leaf_max_size = -1);
 	RC create(LogHandler& log_handler, DiskBufferPool& buffer_pool, vector<std::pair<AttrType, int>> attr_type_list,
-		int internal_max_size = -1, int leaf_max_size = -1);
+		bool unique, int internal_max_size = -1, int leaf_max_size = -1);
 
 	/**
 	 * @brief 打开一个B+树

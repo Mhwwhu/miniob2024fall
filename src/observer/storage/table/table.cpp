@@ -241,6 +241,30 @@ RC Table::open(Db* db, const char* meta_file, const char* base_dir)
 
 RC Table::insert_record(Record& record)
 {
+	// 重复性检查
+	RC rc2;
+	for (Index* index : indexes_) {
+		if (index->index_meta().unique()) {
+			vector<pair<const char*, int>> user_keys;
+			for (auto fieldMeta : index->index_meta().field_list()) {
+				user_keys.push_back({ fieldMeta->offset() + record.data(), fieldMeta->len() });
+			}
+			auto scanner = index->create_scanner(
+				user_keys, vector<bool>(user_keys.size(), true),
+				user_keys, vector<bool>(user_keys.size(), true));
+			RID rid;
+			rc2 = scanner->next_entry(&rid);
+			delete scanner;
+			if (OB_SUCC(rc2)) {
+				Record rcd;
+				this->get_record(rid, rcd);
+				// 找到了对应的记录，说明存在重复记录
+				LOG_WARN("unique index checking failed.");
+				return RC::RECORD_DUPLICATE_KEY;
+			}
+		}
+	}
+
 	RC rc = RC::SUCCESS;
 	rc = record_handler_->insert_record(record.data(), table_meta_.record_size(), &record.rid());
 	if (rc != RC::SUCCESS) {
@@ -250,7 +274,7 @@ RC Table::insert_record(Record& record)
 
 	rc = insert_entry_of_indexes(record.data(), record.rid());
 	if (rc != RC::SUCCESS) {  // 可能出现了键值重复
-		RC rc2 = delete_entry_of_indexes(record.data(), record.rid(), false /*error_on_not_exists*/);
+		rc2 = delete_entry_of_indexes(record.data(), record.rid(), false /*error_on_not_exists*/);
 		if (rc2 != RC::SUCCESS) {
 			LOG_ERROR("Failed to rollback index data when insert index entries failed. table name=%s, rc=%d:%s",
 				name(), rc2, strrc(rc2));
@@ -408,7 +432,7 @@ RC Table::get_chunk_scanner(ChunkFileScanner& scanner, Trx* trx, ReadWriteMode m
 	return rc;
 }
 
-RC Table::create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta_list, const char* index_name)
+RC Table::create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta_list, const char* index_name, bool unique)
 {
 	if (common::is_blank(index_name) || field_meta_list.empty()) {
 		LOG_INFO("Invalid input arguments, table name is %s, index_name is blank or attribute_name_list is blank", name());
@@ -423,7 +447,7 @@ RC Table::create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta
 
 	IndexMeta new_index_meta;
 
-	RC rc = new_index_meta.init(index_name, field_meta_list);
+	RC rc = new_index_meta.init(index_name, field_meta_list, unique);
 	if (rc != RC::SUCCESS) {
 		stringstream field_names;
 		for (auto field_meta : field_meta_list) {
@@ -544,6 +568,28 @@ RC Table::delete_record(const Record& record)
 
 RC Table::update_record(const Record& oldRecord, const Record& newRecord)
 {
+	// 重复性检查
+	RC rc2;
+	for (Index* index : indexes_) {
+		if (index->index_meta().unique()) {
+			vector<pair<const char*, int>> user_keys;
+			for (auto fieldMeta : index->index_meta().field_list()) {
+				user_keys.push_back({ fieldMeta->offset() + newRecord.data(), fieldMeta->len() });
+			}
+			auto scanner = index->create_scanner(
+				user_keys, vector<bool>(user_keys.size(), true),
+				user_keys, vector<bool>(user_keys.size(), true));
+			RID rid;
+			rc2 = scanner->next_entry(&rid);
+			delete scanner;
+			if (OB_SUCC(rc2)) {
+				// 找到了对应的记录，说明存在重复记录
+				LOG_WARN("unique index checking failed.");
+				return RC::RECORD_DUPLICATE_KEY;
+			}
+		}
+	}
+
 	RC rc = RC::SUCCESS;
 	for (Index* index : indexes_) {
 		rc = index->delete_entry(oldRecord.data(), &oldRecord.rid());

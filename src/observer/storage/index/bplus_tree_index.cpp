@@ -38,7 +38,7 @@ RC BplusTreeIndex::create(Table* table, const char* file_name, const IndexMeta& 
 	}
 
 	BufferPoolManager& bpm = table->db()->buffer_pool_manager();
-	RC rc = index_handler_.create(table->db()->log_handler(), bpm, file_name, attr_type_list);
+	RC rc = index_handler_.create(table->db()->log_handler(), bpm, file_name, index_meta.unique(), attr_type_list);
 	stringstream ss;
 	for (auto field : index_meta.field_list()) {
 		ss << field->name() << " ";

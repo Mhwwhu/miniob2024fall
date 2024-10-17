@@ -86,7 +86,7 @@ public:
 	RC recover_insert_record(Record& record);
 
 	// TODO refactor
-	RC create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta_list, const char* index_name);
+	RC create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta_list, const char* index_name, bool unique);
 
 	RC get_record_scanner(RecordFileScanner& scanner, Trx* trx, ReadWriteMode mode);
 
