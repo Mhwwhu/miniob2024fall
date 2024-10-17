@@ -259,7 +259,7 @@ RC Table::insert_record(Record& record)
 				Record rcd;
 				this->get_record(rid, rcd);
 				// 找到了对应的记录，说明存在重复记录
-				LOG_WARN("unique index checking failed.");
+				LOG_WARN("insert record: unique index checking failed.");
 				return RC::RECORD_DUPLICATE_KEY;
 			}
 		}
@@ -457,7 +457,7 @@ RC Table::create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta
 			name(), index_name, field_names.str());
 		return rc;
 	}
-	// TODO
+
 	// 创建索引相关数据
 	BplusTreeIndex* index = new BplusTreeIndex();
 	string          index_file = table_index_file(base_dir_.c_str(), name(), index_name);
@@ -484,6 +484,8 @@ RC Table::create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta
 		if (rc != RC::SUCCESS) {
 			LOG_WARN("failed to insert record into index while creating index. table=%s, index=%s, rc=%s",
 				name(), index_name, strrc(rc));
+			// 撤销索引的创建，删除已经生成的文件
+			scanner.close_scan();
 			return rc;
 		}
 	}
@@ -493,6 +495,7 @@ RC Table::create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta
 	else {
 		LOG_WARN("failed to insert record into index while creating index. table=%s, index=%s, rc=%s",
 			name(), index_name, strrc(rc));
+		scanner.close_scan();
 		return rc;
 	}
 	scanner.close_scan();
@@ -582,9 +585,9 @@ RC Table::update_record(const Record& oldRecord, const Record& newRecord)
 			RID rid;
 			rc2 = scanner->next_entry(&rid);
 			delete scanner;
-			if (OB_SUCC(rc2)) {
+			if (OB_SUCC(rc2) && rid != newRecord.rid()) {
 				// 找到了对应的记录，说明存在重复记录
-				LOG_WARN("unique index checking failed.");
+				LOG_WARN("update record: unique index checking failed.");
 				return RC::RECORD_DUPLICATE_KEY;
 			}
 		}

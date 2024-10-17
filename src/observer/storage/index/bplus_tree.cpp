@@ -54,6 +54,7 @@ int calc_leaf_page_capacity(int attr_length, bool unique)
 		item_size = attr_length + sizeof(RID) + sizeof(RID);
 	}
 	int capacity = ((int)BP_PAGE_DATA_SIZE - LeafIndexNode::HEADER_SIZE) / item_size;
+	cout << "leaf page: item size = " << item_size << " capacity = " << capacity << endl;
 	return capacity;
 }
 
@@ -288,6 +289,7 @@ int LeafIndexNodeHandler::remove(const char* key, const KeyComparator& comparato
 	bool found = false;
 	int  index = lookup(comparator, key, &found);
 	if (found) {
+		cout << "remove: find entry at index " << index << endl;
 		this->remove(index);
 		return 1;
 	}
@@ -852,7 +854,7 @@ RC BplusTreeHandler::create(LogHandler& log_handler,
 	}
 	LOG_INFO("Successfully open index file %s.", file_name);
 
-	rc = this->create(log_handler, *bp, attr_type_list, internal_max_size, leaf_max_size, unique);
+	rc = this->create(log_handler, *bp, attr_type_list, unique, internal_max_size, leaf_max_size);
 	if (OB_FAIL(rc)) {
 		bpm.close_file(file_name);
 		return rc;
@@ -873,6 +875,7 @@ RC BplusTreeHandler::create(LogHandler& log_handler,
 	for (auto attr_type : attr_type_list) {
 		attr_length += attr_type.second;
 	}
+	cout << "leaf_max_size is " << leaf_max_size << endl;
 	if (internal_max_size < 0) {
 		internal_max_size = calc_internal_page_capacity(attr_length, unique);
 	}
@@ -1582,6 +1585,7 @@ RC BplusTreeHandler::insert_entry(vector<pair<const char*, int>> user_keys, cons
 		root_lock_.lock();
 		if (is_empty()) {
 			rc = create_new_tree(mtr, key, rid);
+			cout << "root page is " << file_header_.root_page << endl;
 			root_lock_.unlock();
 			return rc;
 		}
@@ -1839,6 +1843,9 @@ RC BplusTreeHandler::delete_entry_internal(BplusTreeMiniTransaction& mtr, Frame*
 	LeafIndexNodeHandler leaf_index_node(mtr, file_header_, leaf_frame);
 
 	const int remove_count = leaf_index_node.remove(key, key_comparator_);
+	cout << "removed " << remove_count << " element(s)" << endl;
+	cout << "page size is " << leaf_index_node.size() << endl;
+	cout << "min size is " << leaf_index_node.min_size() << endl;
 	if (remove_count == 0) {
 		LOG_TRACE("no data need to remove");
 		// disk_buffer_pool_->unpin_page(leaf_frame);
@@ -1851,7 +1858,7 @@ RC BplusTreeHandler::delete_entry_internal(BplusTreeMiniTransaction& mtr, Frame*
 	if (leaf_index_node.size() >= leaf_index_node.min_size()) {
 		return RC::SUCCESS;
 	}
-
+	cout << "size is less than min size, coalesce or redistribute. page is " << leaf_index_node.page_num() << endl;
 	return coalesce_or_redistribute<LeafIndexNodeHandler>(mtr, leaf_frame);
 }
 
@@ -1869,6 +1876,7 @@ RC BplusTreeHandler::delete_entry(vector<pair<const char*, int>> user_keys, cons
 	Frame* leaf_frame = nullptr;
 
 	rc = find_leaf(mtr, op, key, leaf_frame);
+	cout << "delete_entry: find leaf page " << leaf_frame->page_num() << endl;
 	if (rc == RC::EMPTY) {
 		rc = RC::RECORD_NOT_EXIST;
 		return rc;
@@ -1879,6 +1887,7 @@ RC BplusTreeHandler::delete_entry(vector<pair<const char*, int>> user_keys, cons
 		return rc;
 	}
 	rc = delete_entry_internal(mtr, leaf_frame, key);
+	cout << "delete_entry finished, root is " << file_header_.root_page << endl;
 	return rc;
 }
 
