@@ -28,12 +28,12 @@ IndexScanPhysicalOperator::IndexScanPhysicalOperator(
 {
 	for (int i = 0; i < (int)left_value_list.size(); i++) {
 		if (left_value_list[i]) {
-			left_value_list_[i] = *left_value_list[i];
+			left_value_list_.push_back(*left_value_list[i]);
 		}
 	}
 	for (int i = 0; i < (int)right_value_list.size(); i++) {
 		if (right_value_list[i]) {
-			right_value_list_[i] = *right_value_list[i];
+			right_value_list_.push_back(*right_value_list[i]);
 		}
 	}
 }
@@ -43,11 +43,16 @@ RC IndexScanPhysicalOperator::open(Trx* trx)
 	if (nullptr == table_ || nullptr == index_) {
 		return RC::INTERNAL;
 	}
+
 	std::vector<std::pair<const char*, int>> left_values, right_values;
+	left_values.resize(left_value_list_.size());
+	right_values.resize(right_value_list_.size());
+
 	std::transform(left_value_list_.begin(), left_value_list_.end(), left_values.begin(),
-		[](Value x) {return std::pair<const char*, int>(x.data(), x.length());});
+		[](const Value& x) {return std::pair<const char*, int>(x.data(), x.length());});
 	std::transform(right_value_list_.begin(), right_value_list_.end(), right_values.begin(),
-		[](Value x) {return std::pair<const char*, int>(x.data(), x.length());});
+		[](const Value& x) {return std::pair<const char*, int>(x.data(), x.length());});
+
 	IndexScanner* index_scanner = index_->create_scanner(left_values,
 		left_inclusive_,
 		right_values,

@@ -33,7 +33,8 @@ TableMeta::TableMeta(const TableMeta& other)
 	indexes_(other.indexes_),
 	storage_format_(other.storage_format_),
 	record_size_(other.record_size_)
-{}
+{
+}
 
 void TableMeta::swap(TableMeta& other) noexcept
 {
@@ -155,7 +156,9 @@ vector<const IndexMeta*> TableMeta::find_index_by_field(const char* field) const
 {
 	vector<const IndexMeta*> indexMetaList;
 	for (const IndexMeta& index : indexes_) {
-		if (std::find(index.field_list().begin(), index.field_list().end(), string(field)) != index.field_list().end()) {
+		if (std::find_if(
+			index.field_list().begin(), index.field_list().end(), [=](FieldMeta f) {return strcmp(f.name(), field) == 0;})
+			!= index.field_list().end()) {
 			indexMetaList.push_back(&index);
 		}
 	}

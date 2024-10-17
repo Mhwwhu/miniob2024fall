@@ -45,6 +45,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/update_logical_operator.h"
 #include "sql/operator/update_physical_operator.h"
 #include "sql/optimizer/physical_plan_generator.h"
+#include "storage/index/index.h"
 
 using namespace std;
 
@@ -137,7 +138,7 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator& table_get_oper, u
 	Index* index;
 	ValueExpr* value_expr = nullptr;
 	vector<const char*> field_list;
-	vector<const Value*> value_list;
+	std::map<string, const Value*> field_value_map;
 	for (auto& expr : predicates) {
 		if (expr->type() == ExprType::COMPARISON) {
 			auto comparison_expr = static_cast<ComparisonExpr*>(expr.get());
@@ -170,8 +171,8 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator& table_get_oper, u
 			}
 
 			const Field& field = field_expr->field();
-			value_list.push_back(&value_expr->get_value());
 			field_list.push_back(field.field_name());
+			field_value_map.insert({ field.field_name(), &value_expr->get_value() });
 		}
 	}
 
@@ -179,14 +180,20 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator& table_get_oper, u
 	index = table->find_index_by_field_list(field_list);
 
 	if (index != nullptr) {
-		ASSERT(value_expr != nullptr, "got an index but value expr is null ?");
+		// filtered_value_list存储索引所需要的value，并按照索引排序
+		vector<const Value*> filtered_value_list;
+		for (auto field : index->index_meta().field_list()) {
+			{
+				filtered_value_list.push_back(field_value_map.at(string(field.name())));
+			}
+		}
 		IndexScanPhysicalOperator* index_scan_oper = new IndexScanPhysicalOperator(table,
 			index,
 			table_get_oper.read_write_mode(),
-			value_list,
-			vector<bool>(value_list.size(), true) /*left_inclusive*/,
-			value_list,
-			vector<bool>(value_list.size(), true) /*right_inclusive*/);
+			filtered_value_list,
+			vector<bool>(filtered_value_list.size(), true) /*left_inclusive*/,
+			filtered_value_list,
+			vector<bool>(filtered_value_list.size(), true) /*right_inclusive*/);
 
 		index_scan_oper->set_predicates(std::move(predicates));
 		oper = unique_ptr<PhysicalOperator>(index_scan_oper);

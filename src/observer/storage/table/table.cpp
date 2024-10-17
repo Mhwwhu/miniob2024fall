@@ -209,8 +209,8 @@ RC Table::open(Db* db, const char* meta_file, const char* base_dir)
 	for (int i = 0; i < index_num; i++) {
 		vector<const FieldMeta*> field_meta_list;
 		const IndexMeta* index_meta = table_meta_.index(i);
-		for (string field : index_meta->field_list()) {
-			const FieldMeta* field_meta = table_meta_.field(field.c_str());
+		for (FieldMeta field : index_meta->field_list()) {
+			const FieldMeta* field_meta = table_meta_.field(field.name());
 			if (field_meta == nullptr) {
 				LOG_ERROR("Found invalid index meta info which has a non-exists field. table=%s, index=%s, field=%s",
 					name(), index_meta->name(), field);
@@ -600,8 +600,8 @@ vector<Index*> Table::find_indexes_by_field(const char* field_name) const
 	auto index_meta_list = table_meta.find_index_by_field(field_name);
 	vector<Index*> result;
 	for (auto index_meta : index_meta_list) {
-		Index* idx;
-		if (idx = find_index(index_meta->name())) {
+		Index* idx = find_index(index_meta->name());
+		if (idx) {
 			result.push_back(idx);
 		}
 	}
@@ -610,28 +610,34 @@ vector<Index*> Table::find_indexes_by_field(const char* field_name) const
 
 Index* Table::find_index_by_field_list(const vector<const char*>& field_name_list) const
 {
-	const TableMeta& table_meta = this->table_meta();
 	int max_match = 0;
 	Index* candidate = nullptr;
+	if (field_name_list.empty()) return nullptr;
 	for (auto index : indexes_) {
 		int match = 0;
-		for (auto field_name : index->index_meta().field_list()) {
+		for (auto field : index->index_meta().field_list()) {
 			if (std::find_if(field_name_list.begin(), field_name_list.end(),
-				[=](const char* s) {return strcmp(s, field_name.c_str()) == 0;}) != field_name_list.end()) {
+				[=](const char* s) {return strcmp(s, field.name()) == 0;}) != field_name_list.end()) {
 				match++;
 				continue;
 			}
-			// 确定候选index的逻辑为：优先选择匹配最多field的index，在匹配数量相同的情况下，优先选择短的index
-			if (match > max_match) {
-				candidate = index;
-				max_match = match;
-			}
-			else if (match == max_match &&
-				index->index_meta().field_list().size() < candidate->index_meta().field_list().size()) {
-				candidate = index;
-			}
 			break;
 		}
+		// 确定候选index的逻辑为：优先选择匹配最多field的index，在匹配数量相同的情况下，优先选择短的index
+		// 为了简单，这里做一个特殊处理，仅选择完全匹配的index
+		if (match > max_match && match == (int)index->index_meta().field_list().size()) {
+			candidate = index;
+			max_match = match;
+		}
+		// if (match > max_match) {
+		// 	candidate = index;
+		// 	max_match = match;
+		// }
+		// else if (match != 0 && match == max_match &&
+		// 	index->index_meta().field_list().size() < candidate->index_meta().field_list().size()) {
+		// 	cout << candidate->index_meta().name() << endl;
+		// 	candidate = index;
+		// }
 	}
 	return candidate;
 }

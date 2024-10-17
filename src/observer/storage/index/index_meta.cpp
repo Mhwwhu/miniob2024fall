@@ -31,7 +31,7 @@ RC IndexMeta::init(const char* name, const vector<const FieldMeta*>& field_list)
 
 	name_ = name;
 	for (auto field : field_list) {
-		field_list_.push_back(field->name());
+		field_list_.push_back(*field);
 	}
 	return RC::SUCCESS;
 }
@@ -40,7 +40,9 @@ void IndexMeta::to_json(Json::Value& json_value) const
 {
 	auto jsonArray = Json::Value(Json::arrayValue);
 	for (auto field : field_list_) {
-		jsonArray.append(field);
+		Json::Value element;
+		field.to_json(element);
+		jsonArray.append(element);
 	}
 	json_value[FIELD_NAME] = name_;
 	json_value[FIELD_FIELD_NAME] = jsonArray;
@@ -62,12 +64,12 @@ RC IndexMeta::from_json(const TableMeta& table, const Json::Value& json_value, I
 	}
 	vector<const FieldMeta*> field_list;
 	for (auto fieldMeta : field_list_value) {
-		const FieldMeta* field = table.field(fieldMeta.asCString());
-		if (nullptr == field) {
-			LOG_ERROR("Deserialize index [%s]: no such field: %s", name_value.asCString(), fieldMeta.asCString());
+		FieldMeta field;
+		if (FieldMeta::from_json(fieldMeta, field) != RC::SUCCESS) {
+			LOG_ERROR("Deserialize index [%s]: no such field: %s", name_value.asCString(), fieldMeta["name"].asCString());
 			return RC::SCHEMA_FIELD_MISSING;
 		}
-		field_list.push_back(field);
+		field_list.push_back(table.field(field.name()));
 	}
 
 	return index.init(name_value.asCString(), field_list);
@@ -75,13 +77,13 @@ RC IndexMeta::from_json(const TableMeta& table, const Json::Value& json_value, I
 
 const char* IndexMeta::name() const { return name_.c_str(); }
 
-const vector<string>& IndexMeta::field_list() const { return field_list_; }
+const vector<FieldMeta>& IndexMeta::field_list() const { return field_list_; }
 
 void IndexMeta::desc(ostream& os) const
 {
 	stringstream field_names;
 	for (auto field : field_list_) {
-		field_names << field << " ";
+		field_names << field.name() << " ";
 	}
 	os << "index name=" << name_ << ", field=" << field_names.str();
 }

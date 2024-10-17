@@ -93,7 +93,7 @@ public:
 	{
 		tot_attr_length_ = 0;
 		attr_comparator_list_.resize(type_list.size());
-		for (int i = 0; i < type_list.size(); i++) {
+		for (int i = 0; i < (int)type_list.size(); i++) {
 			attr_comparator_list_[i].init(type_list[i].first, type_list[i].second);
 			tot_attr_length_ += attr_comparator_list_[i].attr_length();
 			attr_length_list_.push_back(attr_comparator_list_[i].attr_length());
@@ -105,7 +105,7 @@ public:
 	int operator()(const char* v1, const char* v2) const
 	{
 		int offset = 0;
-		for (int i = 0; i < attr_comparator_list_.size(); i++) {
+		for (int i = 0; i < (int)attr_comparator_list_.size(); i++) {
 			int result = attr_comparator_list_[i](v1 + offset, v2 + offset);
 			offset += attr_length_list_[i];
 			if (result != 0) {
@@ -161,7 +161,7 @@ public:
 	{
 		tot_attr_length_ = 0;
 		attr_printer_list_.resize(type_list.size());
-		for (int i = 0; i < type_list.size(); i++) {
+		for (int i = 0; i < (int)type_list.size(); i++) {
 			attr_printer_list_[i].init(type_list[i].first, type_list[i].second);
 			tot_attr_length_ += attr_printer_list_[i].attr_length();
 		}
@@ -205,19 +205,13 @@ struct IndexFileHeader
 	int32_t  leaf_max_size;      ///< 叶子节点最大的键值对数
 	int32_t  attr_length;        ///< 键值的长度
 	int32_t  key_length;         ///< attr length + sizeof(RID)
-	vector<pair<AttrType, int>> attr_type_list;          ///< 键值的类型
-
 	const string to_string() const
 	{
 		stringstream ss;
 
 		ss << "attr_length:" << attr_length << ","
 			<< "key_length:" << key_length << ","
-			<< "attr_type: { ";
-		for (auto attr_type : attr_type_list) {
-			ss << attr_type_to_string(attr_type.first) << " ";
-		}
-		ss << "} root_page:" << root_page << ","
+			<< "root_page:" << root_page << ","
 			<< "internal_max_size:" << internal_max_size << ","
 			<< "leaf_max_size:" << leaf_max_size << ";";
 
@@ -500,8 +494,8 @@ public:
 	 * @param bpm 缓冲池管理器
 	 * @param file_name 文件名
 	 */
-	RC open(LogHandler& log_handler, BufferPoolManager& bpm, const char* file_name);
-	RC open(LogHandler& log_handler, DiskBufferPool& buffer_pool);
+	RC open(LogHandler& log_handler, BufferPoolManager& bpm, const char* file_name, const IndexMeta& index_meta);
+	RC open(LogHandler& log_handler, DiskBufferPool& buffer_pool, const IndexMeta& index_meta);
 
 	/**
 	 * 关闭句柄indexHandle对应的索引文件
@@ -683,6 +677,12 @@ protected:
 private:
 	friend class BplusTreeScanner;
 	friend class BplusTreeTester;
+
+private:
+	std::vector<std::pair<AttrType, int>> attr_type_list_;
+	const IndexMeta* index_meta_;
+public:
+	const IndexMeta* index_meta() const { return index_meta_; }
 };
 
 /**
@@ -730,7 +730,7 @@ private:
 	/**
 	 * 如果key的类型是CHARS, 扩展或缩减user_key的大小刚好是schema中定义的大小
 	 */
-	RC fix_user_key(const char* user_key, int key_len, bool want_greater, char** fixed_key, bool* need_inclusive);
+	RC fix_user_key(const char* user_key, int& key_len, bool want_greater, char** fixed_key, bool* need_inclusive);
 
 	void fetch_item(RID& rid);
 
