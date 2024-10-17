@@ -184,7 +184,7 @@ RC PhysicalPlanGenerator::create_plan(TableGetLogicalOperator& table_get_oper, u
 		vector<const Value*> filtered_value_list;
 		for (auto field : index->index_meta().field_list()) {
 			{
-				filtered_value_list.push_back(field_value_map.at(string(field.name())));
+				filtered_value_list.push_back(field_value_map.at(string(field->name())));
 			}
 		}
 		IndexScanPhysicalOperator* index_scan_oper = new IndexScanPhysicalOperator(table,

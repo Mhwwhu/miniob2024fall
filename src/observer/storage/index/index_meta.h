@@ -39,7 +39,7 @@ public:
 
 public:
 	const char* name() const;
-	const vector<FieldMeta>& field_list() const;
+	const vector<const FieldMeta*>& field_list() const;
 
 	void desc(ostream& os) const;
 
@@ -49,5 +49,5 @@ public:
 
 protected:
 	string name_;   // index's name
-	std::vector<FieldMeta> field_list_;  // field list
+	std::vector<const FieldMeta*> field_list_;  // field list
 };

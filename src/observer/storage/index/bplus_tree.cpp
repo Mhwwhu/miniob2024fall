@@ -939,7 +939,7 @@ RC BplusTreeHandler::open(LogHandler& log_handler, DiskBufferPool& buffer_pool, 
 {
 	attr_type_list_.resize(index_meta.field_list().size());
 	std::transform(index_meta.field_list().begin(), index_meta.field_list().end(), attr_type_list_.begin(),
-		[](const FieldMeta& f) {return std::pair<AttrType, int>(f.type(), f.len());});
+		[](const FieldMeta* f) {return std::pair<AttrType, int>(f->type(), f->len());});
 	index_meta_ = &index_meta;
 	if (disk_buffer_pool_ != nullptr) {
 		LOG_WARN("b+tree has been opened before index.open.");
@@ -974,7 +974,7 @@ RC BplusTreeHandler::open(LogHandler& log_handler, DiskBufferPool& buffer_pool, 
 	std::transform(index_meta.field_list().begin(),
 		index_meta.field_list().end(),
 		attr_type_list.begin(),
-		[](FieldMeta field) {return pair<AttrType, int>(field.type(), field.len());});
+		[](const FieldMeta* field) {return pair<AttrType, int>(field->type(), field->len());});
 	key_comparator_.init(attr_type_list);
 	key_printer_.init(attr_type_list);
 	LOG_INFO("Successfully open index");

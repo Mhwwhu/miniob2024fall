@@ -209,8 +209,8 @@ RC Table::open(Db* db, const char* meta_file, const char* base_dir)
 	for (int i = 0; i < index_num; i++) {
 		vector<const FieldMeta*> field_meta_list;
 		const IndexMeta* index_meta = table_meta_.index(i);
-		for (FieldMeta field : index_meta->field_list()) {
-			const FieldMeta* field_meta = table_meta_.field(field.name());
+		for (auto field : index_meta->field_list()) {
+			const FieldMeta* field_meta = table_meta_.field(field->name());
 			if (field_meta == nullptr) {
 				LOG_ERROR("Found invalid index meta info which has a non-exists field. table=%s, index=%s, field=%s",
 					name(), index_meta->name(), field);
@@ -224,7 +224,7 @@ RC Table::open(Db* db, const char* meta_file, const char* base_dir)
 		BplusTreeIndex* index = new BplusTreeIndex();
 		string          index_file = table_index_file(base_dir, name(), index_meta->name());
 
-		rc = index->open(this, index_file.c_str(), *index_meta, field_meta_list);
+		rc = index->open(this, index_file.c_str(), *index_meta);
 		if (rc != RC::SUCCESS) {
 			delete index;
 			LOG_ERROR("Failed to open index. table=%s, index=%s, file=%s, rc=%s",
@@ -438,7 +438,7 @@ RC Table::create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta
 	BplusTreeIndex* index = new BplusTreeIndex();
 	string          index_file = table_index_file(base_dir_.c_str(), name(), index_name);
 
-	rc = index->create(this, index_file.c_str(), new_index_meta, field_meta_list);
+	rc = index->create(this, index_file.c_str(), new_index_meta);
 	if (rc != RC::SUCCESS) {
 		delete index;
 		LOG_ERROR("Failed to create bplus tree index. file name=%s, rc=%d:%s", index_file.c_str(), rc, strrc(rc));
@@ -511,7 +511,7 @@ RC Table::create_index(Trx* trx, const std::vector<const FieldMeta*>& field_meta
 		return RC::IOERR_WRITE;
 	}
 
-	table_meta_.swap(new_table_meta);
+	table_meta_.add_index(new_index_meta);
 
 	LOG_INFO("Successfully added a new index (%s) on the table (%s)", index_name, name());
 	return rc;
@@ -617,7 +617,7 @@ Index* Table::find_index_by_field_list(const vector<const char*>& field_name_lis
 		int match = 0;
 		for (auto field : index->index_meta().field_list()) {
 			if (std::find_if(field_name_list.begin(), field_name_list.end(),
-				[=](const char* s) {return strcmp(s, field.name()) == 0;}) != field_name_list.end()) {
+				[=](const char* s) {return strcmp(s, field->name()) == 0;}) != field_name_list.end()) {
 				match++;
 				continue;
 			}

@@ -157,7 +157,9 @@ vector<const IndexMeta*> TableMeta::find_index_by_field(const char* field) const
 	vector<const IndexMeta*> indexMetaList;
 	for (const IndexMeta& index : indexes_) {
 		if (std::find_if(
-			index.field_list().begin(), index.field_list().end(), [=](FieldMeta f) {return strcmp(f.name(), field) == 0;})
+			index.field_list().begin(),
+			index.field_list().end(),
+			[=](const FieldMeta* f) {return strcmp(f->name(), field) == 0;})
 			!= index.field_list().end()) {
 			indexMetaList.push_back(&index);
 		}

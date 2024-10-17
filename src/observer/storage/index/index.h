@@ -78,11 +78,10 @@ public:
 	virtual RC sync() = 0;
 
 protected:
-	RC init(const IndexMeta& index_meta, const vector<const FieldMeta*>& field_meta_list);
+	RC init(const IndexMeta& index_meta);
 
 protected:
 	IndexMeta index_meta_;  ///< 索引的元数据
-	vector<const FieldMeta*> field_meta_list_;  ///< 实现多字段索引
 };
 
 /**
